@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Agriculture Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --secondary-color: #4caf50;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --danger-color: #e53935;
+            --warning-color: #ffa000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .card-unit {
+            font-size: 1rem;
+            color: #888;
+        }
+
+        .camera-feed {
+            grid-column: 1 / -1;
+            text-align: center;
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .camera-feed img {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .status-safe { background-color: #c8e6c9; color: #256029; }
+        .status-danger { background-color: #ffcdd2; color: #c62828; }
+        .status-warning { background-color: #ffecb3; color: #8d6e63; }
+
+        .alerts-section {
+            grid-column: 1 / -1;
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        #alerts-container {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-left: 4px solid var(--danger-color);
+            background-color: #ffebee;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1><i class="fas fa-seedling"></i> Smart Agriculture Monitor</h1>
+        <p>Real-time Environmental & Crop Health Monitoring System</p>
+    </div>
+
+    <div class="grid-container">
+        <!-- Sensor Cards -->
+        <div class="card">
+            <i class="fas fa-water card-icon"></i>
+            <div class="card-title">Soil Moisture</div>
+            <div class="card-value" id="soil-moisture">--</div>
+            <div class="card-unit">%</div>
+        </div>
+
+        <div class="card">
+            <i class="fas fa-thermometer-half card-icon" style="color: #ff7043;"></i>
+            <div class="card-title">Air Temperature</div>
+            <div class="card-value" id="air-temp">--</div>
+            <div class="card-unit">°C</div>
+        </div>
+
+        <div class="card">
+            <i class="fas fa-tint card-icon" style="color: #29b6f6;"></i>
+            <div class="card-title">Humidity</div>
+            <div class="card-value" id="humidity">--</div>
+            <div class="card-unit">%</div>
+        </div>
+
+        <div class="card">
+            <i class="fas fa-flask card-icon" style="color: #ab47bc;"></i>
+            <div class="card-title">Water TDS</div>
+            <div class="card-value" id="tds">--</div>
+            <div class="card-unit">ppm</div>
+            <div id="tds-status" class="status-badge status-safe">analyzing...</div>
+        </div>
+        
+        <div class="card">
+             <i class="fas fa-thermometer-quarter card-icon" style="color: #42a5f5;"></i>
+             <div class="card-title">Water Temp</div>
+             <div class="card-value" id="water-temp">--</div>
+             <div class="card-unit">°C</div>
+        </div>
+
+        <!-- Camera Section -->
+        <div class="camera-feed">
+            <h2><i class="fas fa-camera"></i> Live Crop Monitoring</h2>
+            <!-- Update the valid src for the camera feed -->
+            <img src="{{ url_for('video_feed') }}" alt="Live Camera Feed">
+            <div style="margin-top: 15px;">
+                <strong>Crop Status: </strong> 
+                <span id="crop-status" class="status-badge status-safe">Detecting...</span>
+                <span id="crop-confidence" style="font-size: 0.9em; color: #666; margin-left:10px;"></span>
+            </div>
+        </div>
+        
+        <!-- Alerts Section -->
+        <div class="alerts-section">
+            <h2><i class="fas fa-bell"></i> System Alerts</h2>
+            <div id="alerts-container">
+                <!-- Alerts will appear here -->
+                <div class="alert-item" style="border-left-color: #4caf50; background-color: #e8f5e9;">System Online - Monitoring Started</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateSensors() {
+            fetch('/api/sensors')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('soil-moisture').innerText = data.soil_moisture;
+                    document.getElementById('air-temp').innerText = data.air_temperature;
+                    document.getElementById('humidity').innerText = data.humidity;
+                    document.getElementById('tds').innerText = data.tds;
+                    document.getElementById('water-temp').innerText = data.water_temperature;
+                    
+                    // Update Water Quality Status
+                    const tdsStatus = document.getElementById('tds-status');
+                    tdsStatus.innerText = data.water_quality;
+                    if(data.water_quality === 'Safe') {
+                        tdsStatus.className = 'status-badge status-safe';
+                    } else if (data.water_quality === 'Moderate') {
+                        tdsStatus.className = 'status-badge status-warning';
+                    } else {
+                        tdsStatus.className = 'status-badge status-danger';
+                    }
+                })
+                .catch(error => console.error('Error fetching sensor data:', error));
+        }
+        
+        function updateCropStatus() {
+            fetch('/api/crop_status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusSpan = document.getElementById('crop-status');
+                    statusSpan.innerText = data.label;
+                    document.getElementById('crop-confidence').innerText = `(${data.confidence}%)`;
+                    
+                    if(data.label === 'Healthy') {
+                        statusSpan.className = 'status-badge status-safe';
+                    } else if (data.label === 'Diseased') {
+                        statusSpan.className = 'status-badge status-danger';
+                        addAlert(`Crop Disease Detected: ${data.label} (${data.confidence}%)`);
+                    } else {
+                        statusSpan.className = 'status-badge status-warning';
+                    }
+                });
+        }
+        
+        function addAlert(message) {
+            const container = document.getElementById('alerts-container');
+            // Check if alert already exists to prevent spam
+            if (!container.innerHTML.includes(message)) {
+                const div = document.createElement('div');
+                div.className = 'alert-item';
+                div.innerText = new Date().toLocaleTimeString() + " - " + message;
+                container.prepend(div);
+            }
+        }
+
+        // Update functionality
+        setInterval(updateSensors, 2000); // Every 2 seconds
+        setInterval(updateCropStatus, 3000); // Every 3 seconds
+    </script>
+</body>
+</html>

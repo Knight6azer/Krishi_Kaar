@@ -1,0 +1,10 @@
+flask
+opencv-python
+tensorflow
+scikit-learn
+pandas
+numpy
+# RPi.GPIO  # Uncomment for Raspberry Pi
+# adafruit-circuitpython-dht # Uncomment for Raspberry Pi
+# spidev # Uncomment for Raspberry Pi
+# w1thermsensor # Uncomment for Raspberry Pi
