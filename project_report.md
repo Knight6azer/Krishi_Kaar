@@ -1,5 +1,5 @@
 # SMART AGRICULTURE & ENVIRONMENTAL MONITORING SYSTEM
-## Major Project Report
+## Mini Project Report
 Project Code: **MP(S6)-2025**
 
 ---

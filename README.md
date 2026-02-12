@@ -72,4 +72,4 @@ MP(S6)/
 
 ## 📜 License
 
-MIT License. Designed for Major Project (S6).
+MIT License. Designed for Mini Project (S6).
