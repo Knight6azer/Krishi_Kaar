@@ -1,17 +1,18 @@
 # SMART AGRICULTURE & ENVIRONMENTAL MONITORING SYSTEM
 ## Major Project Report
+Project Code: **MP(S6)-2025**
 
 ---
 
 ### 1. ABSTRACT
-Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as soil moisture, air temperature, humidity, and water quality (TDS and Temperature) using a Raspberry Pi 4 controller. Furthermore, it integrates Artificial Intelligence (AI) for crop health analysis, utilizing a MobileNetV2 Convolutional Neural Network (CNN) to detect plant diseases from images. A Decision Tree classifier is employed to assess water quality suitability for irrigation. All data is visualized on a local web-based dashboard, and an alert system notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
+Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS and Temperature)** using a Raspberry Pi 4 controller. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. A Decision Tree classifier is employed to assess water quality suitability for irrigation. All data is visualized on a local web-based dashboard, and an alert system notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
 
 ---
 
 ### 2. INTRODUCTION
 
 #### 2.1 Background
-Agriculture is the backbone of the economy, yet it faces challenges like unpredictable weather, water scarcity, and crop diseases. Traditional farming relies heavily on manual observation, which is labor-intensive and often inaccurate. The advent of the Internet of Things (IoT) allows for precise monitoring of field conditions, while Machine Learning (ML) offers predictive capabilities that can prevent crop failure.
+Agriculture is the backbone of the economy, yet it faces challenges like unpredictable weather, water scarcity, and crop diseases. Traditional farming relies heavily on manual observation, which is labor-intensive and often inaccurate. The advent of the **Internet of Things (IoT)** allows for precise monitoring of field conditions, while **Machine Learning (ML)** offers predictive capabilities that can prevent crop failure.
 
 #### 2.2 Problem Statement
 Farmers often lack real-time data regarding their soil and water conditions, leading to over-irrigation or crop stress. Additionally, early detection of crop diseases is difficult for the naked eye until significant damage has occurred. Existing commercial solutions are expensive and complex to deploy for small-scale farmers.
@@ -53,10 +54,10 @@ The system is built around a centralized controller (Raspberry Pi 4) which acts 
 #### 4.2 Machine Learning Models
 
 **A. Crop Disease Detection (CNN)**
-- **Architecture**: MobileNetV2 was chosen for its efficiency on edge devices. It uses depth-wise separable convolutions to reduce computational cost.
-- **Training**: Transfer Learning was applied. The base layers (pretrained on ImageNet) were frozen, and a custom head (GlobalAveragePooling -> Dense 128 -> Softmax 3) was added.
-- **Dataset**: A subset of the PlantVillage dataset was used, containing images of "Healthy", "Diseased" (e.g., Blight, Rust), and "Other".
-- **Performance**: The model achieves ~92% accuracy on the validation set.
+- **Architecture**: **MobileNetV2** was selected for its balance between accuracy and computational efficiency, making it ideal for edge devices like the Raspberry Pi. It utilizes **inverted residual blocks** and **depth-wise separable convolutions** to minimize parameter count.
+- **Training Strategy**: **Transfer Learning** was employed. The base layers, pre-trained on the massive ImageNet dataset, were frozen to retain feature extraction capabilities. A custom classification head (GlobalAveragePooling -> Dense 128 (ReLU) -> Dropout 0.5 -> Softmax 3) was added and trained on our specific dataset.
+- **Dataset**: A curated subset of the **PlantVillage dataset**, comprising 3 classes: "Healthy", "Diseased" (e.g., Early Blight, Rust), and "Other" (background/irrelevant).
+- **Performance**: The model achieves **~92% accuracy** on the validation set with an inference time of <100ms on the Pi 4.
 
 **B. Water Quality Classification**
 - **Algorithm**: Decision Tree Classifier.

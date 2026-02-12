@@ -1,8 +1,11 @@
 # 🌱 Smart Agriculture & Environmental Monitoring System
+[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Knight6azer/Krishi_kaar/graphs/commit-activity)
 
-A low-cost, IoT-based precision farming solution that integrates **Machine Learning** for crop disease detection and water quality assessment.
+A low-cost, IoT-based precision farming solution that integrates **Machine Learning** for crop disease detection and water quality assessment. This project leverages Raspberry Pi 4 to monitor environmental parameters and provide actionable insights via a web dashboard.
 
-![Dashboard Preview](https://via.placeholder.com/800x400?text=Dashboard+Preview)
+![Dashboard Preview](https://via.placeholder.com/800x400?text=Predictive+Project+Dashboard)
 
 ## 🚀 Features
 
@@ -49,9 +52,16 @@ MP(S6)/
    ```bash
    python main.py
    ```
+   ```
    *The system will automatically detect if it is running on a PC and switch to **Mock Mode** for sensors.*
 
-4. **Access the Dashboard**:
+4. **Generate Report Graphs** (Optional):
+   ```bash
+   python generate_graphs.py
+   ```
+   This will create visualization images (`graph_*.png`) used in the project report.
+
+5. **Access the Dashboard**:
    Open [http://localhost:5000](http://localhost:5000) in your browser.
 
 ## 📊 Results
