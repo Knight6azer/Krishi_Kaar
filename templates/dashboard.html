@@ -139,37 +139,49 @@
 </head>
 <body>
 
-    <div class="header">
-        <h1><i class="fas fa-seedling"></i> Smart Agriculture Monitor</h1>
-        <p>Real-time Environmental & Crop Health Monitoring System</p>
+    <div class="header" style="position: relative;">
+        <div style="position: absolute; right: 20px; top: 10px;">
+            <select id="lang-select" onchange="translatePage()" style="padding: 5px; border-radius: 5px; cursor: pointer;">
+                <option value="en">English</option>
+                <option value="hi">हिंदी</option>
+                <option value="bn">বাংলা</option>
+                <option value="te">తెలుగు</option>
+                <option value="mr">मराठी</option>
+                <option value="ta">தமிழ்</option>
+                <option value="gu">ગુજરાતી</option>
+                <option value="ur">اردو</option>
+            </select>
+        </div>
+        <h1><i class="fas fa-seedling"></i> <span id="t_main_title">Smart Agriculture Monitor</span></h1>
+        <p id="t_sub_title">Real-time Environmental & Crop Health Monitoring System</p>
     </div>
 
     <div class="grid-container">
         <!-- Sensor Cards -->
         <div class="card">
             <i class="fas fa-water card-icon"></i>
-            <div class="card-title">Soil Moisture</div>
+            <div class="card-title" id="t_soil_moisture">Soil Moisture</div>
             <div class="card-value" id="soil-moisture">--</div>
             <div class="card-unit">%</div>
         </div>
 
         <div class="card">
             <i class="fas fa-thermometer-half card-icon" style="color: #ff7043;"></i>
-            <div class="card-title">Air Temperature</div>
+            <div class="card-title" id="t_air_temp">Air Temperature</div>
             <div class="card-value" id="air-temp">--</div>
             <div class="card-unit">°C</div>
         </div>
 
         <div class="card">
             <i class="fas fa-tint card-icon" style="color: #29b6f6;"></i>
-            <div class="card-title">Humidity</div>
+            <div class="card-title" id="t_humidity">Humidity</div>
             <div class="card-value" id="humidity">--</div>
             <div class="card-unit">%</div>
         </div>
 
         <div class="card">
             <i class="fas fa-flask card-icon" style="color: #ab47bc;"></i>
-            <div class="card-title">Water TDS</div>
+            <div class="card-title" id="t_water_tds">Water TDS</div>
             <div class="card-value" id="tds">--</div>
             <div class="card-unit">ppm</div>
             <div id="tds-status" class="status-badge status-safe">analyzing...</div>
@@ -177,18 +189,43 @@
         
         <div class="card">
              <i class="fas fa-thermometer-quarter card-icon" style="color: #42a5f5;"></i>
-             <div class="card-title">Water Temp</div>
+             <div class="card-title" id="t_water_temp">Water Temp</div>
              <div class="card-value" id="water-temp">--</div>
              <div class="card-unit">°C</div>
         </div>
 
+        <!-- Recommendation Cards -->
+        <div class="card">
+             <i class="fas fa-leaf card-icon" style="color: #4caf50;"></i>
+             <div class="card-title" id="t_crop_rec">Crop Recommendation</div>
+             <div class="card-value" style="font-size: 1.5rem; text-align: center;" id="rec-crop">--</div>
+        </div>
+        
+        <div class="card">
+             <i class="fas fa-vial card-icon" style="color: #8d6e63;"></i>
+             <div class="card-title" id="t_fert_rec">Fertilizer Recommendation</div>
+             <div class="card-value" style="font-size: 1.5rem; text-align: center;" id="rec-fert">--</div>
+        </div>
+        
+        <div class="card">
+             <i class="fas fa-hand-holding-water card-icon" style="color: #0288d1;"></i>
+             <div class="card-title" id="t_water_req">Necessary Water Supply</div>
+             <div class="card-value" style="font-size: 1.5rem; text-align: center;" id="rec-water">--</div>
+        </div>
+        
+        <div class="card">
+             <i class="fas fa-rupee-sign card-icon" style="color: #ffd54f;"></i>
+             <div class="card-title" id="t_market_price">Current Market Price</div>
+             <div class="card-value" style="font-size: 1.5rem; text-align: center;" id="rec-price">--</div>
+        </div>
+
         <!-- Camera Section -->
         <div class="camera-feed">
-            <h2><i class="fas fa-camera"></i> Live Crop Monitoring</h2>
+            <h2><i class="fas fa-camera"></i> <span id="t_live_crop">Live Crop Monitoring</span></h2>
             <!-- Update the valid src for the camera feed -->
             <img src="{{ url_for('video_feed') }}" alt="Live Camera Feed">
             <div style="margin-top: 15px;">
-                <strong>Crop Status: </strong> 
+                <strong id="t_crop_status">Crop Status: </strong> 
                 <span id="crop-status" class="status-badge status-safe">Detecting...</span>
                 <span id="crop-confidence" style="font-size: 0.9em; color: #666; margin-left:10px;"></span>
             </div>
@@ -196,7 +233,7 @@
         
         <!-- Alerts Section -->
         <div class="alerts-section">
-            <h2><i class="fas fa-bell"></i> System Alerts</h2>
+            <h2><i class="fas fa-bell"></i> <span id="t_system_alerts">System Alerts</span></h2>
             <div id="alerts-container">
                 <!-- Alerts will appear here -->
                 <div class="alert-item" style="border-left-color: #4caf50; background-color: #e8f5e9;">System Online - Monitoring Started</div>
@@ -205,6 +242,58 @@
     </div>
 
     <script>
+        const translations = {
+            "en": {
+                "t_main_title": "Smart Agriculture Monitor",
+                "t_sub_title": "Real-time Environmental & Crop Health Monitoring System",
+                "t_soil_moisture": "Soil Moisture",
+                "t_air_temp": "Air Temperature",
+                "t_humidity": "Humidity",
+                "t_water_tds": "Water TDS",
+                "t_water_temp": "Water Temp",
+                "t_crop_rec": "Crop Recommendation",
+                "t_fert_rec": "Fertilizer Recommendation",
+                "t_water_req": "Necessary Water Supply",
+                "t_market_price": "Current Market Price",
+                "t_live_crop": "Live Crop Monitoring",
+                "t_crop_status": "Crop Status: ",
+                "t_system_alerts": "System Alerts"
+            },
+            "hi": {
+                "t_main_title": "स्मार्ट कृषि मॉनिटर",
+                "t_sub_title": "वास्तविक समय पर्यावरण और फसल स्वास्थ्य निगरानी प्रणाली",
+                "t_soil_moisture": "मिट्टी की नमी",
+                "t_air_temp": "हवा का तापमान",
+                "t_humidity": "नमी",
+                "t_water_tds": "पानी का टीडीएस",
+                "t_water_temp": "पानी का तापमान",
+                "t_crop_rec": "फसल की सिफारिश",
+                "t_fert_rec": "उर्वरक की सिफारिश",
+                "t_water_req": "आवश्यक जल आपूर्ति",
+                "t_market_price": "वर्तमान बाजार मूल्य",
+                "t_live_crop": "लाइव फसल निगरानी",
+                "t_crop_status": "फसल की स्थिति: ",
+                "t_system_alerts": "सिस्टम अलर्ट"
+            },
+            "bn": { "t_main_title": "স্মার্ট কৃষি মনিটর", "t_sub_title": "রিয়েল-টাইম পরিবেশ ও ফসল স্বাস্থ্য পর্যবেক্ষণ সিস্টেম", "t_soil_moisture": "মাটির আর্দ্রতা", "t_air_temp": "বায়ুর তাপমাত্রা", "t_humidity": "আর্দ্রতা", "t_water_tds": "জলের টিডিএস", "t_water_temp": "জলের তাপমাত্রা", "t_crop_rec": "ফসলের সুপারিশ", "t_fert_rec": "সারের সুপারিশ", "t_water_req": "প্রয়োজনীয় জল সরবরাহ", "t_market_price": "বর্তমান বাজার দর", "t_live_crop": "লাইভ ফসল পর্যবেক্ষণ", "t_crop_status": "ফসলের অবস্থা: ", "t_system_alerts": "সিস্টেম অ্যালার্ট" },
+            "te": { "t_main_title": "స్మార్ట్ అగ్రికల్చర్ మానిటర్", "t_sub_title": "రియల్-టైమ్ పర్యావరణ & పంట ఆరోగ్య పర్యవేక్షణ వ్యవస్థ", "t_soil_moisture": "నేల తేమ", "t_air_temp": "గాలి ఉష్ణోగ్రత", "t_humidity": "తేమ", "t_water_tds": "నీటి టిడిఎస్", "t_water_temp": "నీటి ఉష్ణోగ్రత", "t_crop_rec": "పంట సిఫార్సు", "t_fert_rec": "ఎరువుల సిఫార్సు", "t_water_req": "అవసరమైన నీటి సరఫరా", "t_market_price": "ప్రస్తుత మార్కెట్ ధర", "t_live_crop": "లైవ్ పంట పర్యవేక్షణ", "t_crop_status": "పంట స్థితి: ", "t_system_alerts": "సిస్టమ్ హెచ్చరికలు" },
+            "mr": { "t_main_title": "स्मार्ट कृषी मॉनिटर", "t_sub_title": "रिअल-टाइम पर्यावरण आणि पीक आरोग्य निरीक्षण प्रणाली", "t_soil_moisture": "मातीची ओलावा", "t_air_temp": "हवेचे तापमान", "t_humidity": "आर्द्रता", "t_water_tds": "पाण्याचे टीडीएस", "t_water_temp": "पाण्याचे तापमान", "t_crop_rec": "पीक शिफारस", "t_fert_rec": "खत शिफारस", "t_water_req": "आवश्यक पाणी पुरवठा", "t_market_price": "सध्याचे बाजार मूल्य", "t_live_crop": "थेट पीक निरीक्षण", "t_crop_status": "पिकाची स्थिती: ", "t_system_alerts": "सिस्टीम अलर्ट" },
+            "ta": { "t_main_title": "ஸ்மார்ட் விவசாய மானிட்டர்", "t_sub_title": "நிகழ்நேர சுற்றுச்சூழல் மற்றும் பயிர் சுகாதார கண்காணிப்பு அமைப்பு", "t_soil_moisture": "மண் ஈரப்பதம்", "t_air_temp": "காற்றின் வெப்பநிலை", "t_humidity": "ஈரப்பதம்", "t_water_tds": "நீர் டி.டி.எஸ்", "t_water_temp": "நீரின் வெப்பநிலை", "t_crop_rec": "பயிர் பரிந்துரை", "t_fert_rec": "உரப் பரிந்துரை", "t_water_req": "தேவையான நீர் வழங்கல்", "t_market_price": "தற்போதைய சந்தை விலை", "t_live_crop": "நேரடி பயிர் கண்காணிப்பு", "t_crop_status": "பயிர் நிலை: ", "t_system_alerts": "கணினி எச்சரிக்கைகள்" },
+            "gu": { "t_main_title": "સ્માર્ટ કૃષિ મોનિટર", "t_sub_title": "રીઅલ-ટાઇમ પર્યાવરણ અને પાક આરોગ્ય મોનીટરીંગ સિસ્ટમ", "t_soil_moisture": "માટીનો ભેજ", "t_air_temp": "હવાનું તાપમાન", "t_humidity": "ભેજ", "t_water_tds": "પાણીનું TDS", "t_water_temp": "પાણીનું તાપમાન", "t_crop_rec": "પાક ભલામણ", "t_fert_rec": "ખાતર ભલામણ", "t_water_req": "જરૂરી પાણી પુરવઠો", "t_market_price": "વર્તમાન બજાર ભાવ", "t_live_crop": "જીવંત પાક મોનીટરીંગ", "t_crop_status": "પાકની સ્થિતિ: ", "t_system_alerts": "સિસ્ટમ ચેતવણીઓ" },
+            "ur": { "t_main_title": "سمارٹ زراعت مانیٹر", "t_sub_title": "ریئل ٹائم ماحولیاتی اور فصل کی صحت کی نگرانی کا نظام", "t_soil_moisture": "مٹی کی نمی", "t_air_temp": "ہوا کا درجہ حرارت", "t_humidity": "نمی", "t_water_tds": "پانی کا ٹی ڈی ایس", "t_water_temp": "پانی کا درجہ حرارت", "t_crop_rec": "فصل کی سفارش", "t_fert_rec": "کھاد کی سفارش", "t_water_req": "پانی کی ضروری فراہمی", "t_market_price": "موجودہ مارکیٹ قیمت", "t_live_crop": "لائیو فصل کی نگرانی", "t_crop_status": "فصل کی حیثیت: ", "t_system_alerts": "سسٹم الرٹس" }
+        };
+
+        function translatePage() {
+            const lang = document.getElementById('lang-select').value;
+            const dict = translations[lang];
+            for (let key in dict) {
+                const el = document.getElementById(key);
+                if (el) {
+                    el.innerText = dict[key];
+                }
+            }
+        }
+
         function updateSensors() {
             fetch('/api/sensors')
                 .then(response => response.json())
@@ -248,6 +337,22 @@
                 });
         }
         
+        function updateRecommendations() {
+            fetch('/api/recommendations')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('rec-crop').innerText = data.crop_recommendation;
+                    document.getElementById('rec-fert').innerText = data.fertilizer_recommendation;
+                    document.getElementById('rec-water').innerText = data.water_supply;
+                    document.getElementById('rec-price').innerText = data.market_price;
+                    
+                    if (data.intruder_alert) {
+                        addAlert("Imposter Alert! Motion detected near the sensor fields.");
+                    }
+                })
+                .catch(error => console.error('Error fetching recommendations:', error));
+        }
+        
         function addAlert(message) {
             const container = document.getElementById('alerts-container');
             // Check if alert already exists to prevent spam
@@ -259,9 +364,13 @@
             }
         }
 
+        // Initial translation load
+        translatePage();
+
         // Update functionality
         setInterval(updateSensors, 2000); // Every 2 seconds
         setInterval(updateCropStatus, 3000); // Every 3 seconds
+        setInterval(updateRecommendations, 3000); // Every 3 seconds
     </script>
 </body>
 </html>

@@ -12,12 +12,13 @@ A low-cost, IoT-based precision farming solution that integrates **Machine Learn
 - **Real-time Monitoring**: Soil Moisture, Air Temp/Humidity, Water TDS & Temp.
 - **Crop Disease Detection**: Uses **MobileNetV2** (CNN) to identify plant diseases from camera feed.
 - **Water Quality Analysis**: Uses **Decision Tree Classifier** to determine safe/unsafe water conditions.
-- **Web Dashboard**: Interactive Flask-based interface.
-- **Alert System**: Notifications for critical conditions.
+- **Recommendation Engine**: Provides Crop, Fertilizer, Water, and Market Price recommendations based on sensing data.
+- **Multilingual Web Dashboard**: Interactive Flask-based interface translated into 7 major Indian languages + English.
+- **Alert System & Imposter Detection**: Notifications for critical conditions and an Ultrasonic sensor to detect intruders.
 
 ## 🛠️ Tech Stack
 
-- **Hardware**: Raspberry Pi 4, MCP3008 ADC, DHT11, DS18B20, Soil Moisture Sensor, TDS Sensor, Webcam.
+- **Hardware**: Raspberry Pi 4, MCP3008 ADC, DHT11, DS18B20, Soil Moisture Sensor, TDS Sensor, Ultrasonic Sensor, Webcam.
 - **Software**: Python 3, Flask, OpenCV, TensorFlow/Keras, Scikit-learn.
 
 ## 📂 Project Structure

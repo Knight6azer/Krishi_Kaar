@@ -5,7 +5,7 @@ Project Code: **MP(S6)-2025**
 ---
 
 ### 1. ABSTRACT
-Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS and Temperature)** using a Raspberry Pi 4 controller. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. A Decision Tree classifier is employed to assess water quality suitability for irrigation. All data is visualized on a local web-based dashboard, and an alert system notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
+Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS and Temperature)** using a Raspberry Pi 4 controller, along with an **Ultrasonic Sensor** for imposter detection. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. It also features a **Recommendation Engine** that suggests optimal crops, fertilizers, water supply, and estimates market price. All data is visualized on a multilingual web-based dashboard (supporting English and 7 Indian languages), and an alert system notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
 
 ---
 
@@ -18,11 +18,12 @@ Agriculture is the backbone of the economy, yet it faces challenges like unpredi
 Farmers often lack real-time data regarding their soil and water conditions, leading to over-irrigation or crop stress. Additionally, early detection of crop diseases is difficult for the naked eye until significant damage has occurred. Existing commercial solutions are expensive and complex to deploy for small-scale farmers.
 
 #### 2.3 Objectives
-- To design an IoT sensing node for soil moisture, temperature, humidity, and water quality.
+- To design an IoT sensing node for soil moisture, temperature, humidity, water quality, and ultrasonic distance.
 - To implement a Computer Vision model for identifying common crop diseases.
 - To develop a Machine Learning model for classifying irrigation water quality.
-- To create a unified web dashboard for data visualization and remote monitoring.
-- To implement an automated alert system for critical environmental thresholds.
+- To build a Recommendation Engine providing insights on crop selection, fertilizers, and water needs.
+- To create a unified, multilingual web dashboard for data visualization and remote monitoring.
+- To implement an automated alert system for critical environmental thresholds and intruder detection.
 
 ---
 
@@ -41,6 +42,7 @@ The system is built around a centralized controller (Raspberry Pi 4) which acts 
 4. **DHT11**: A basic, low-cost digital temperature and humidity sensor.
 5. **TDS Sensor (Total Dissolved Solids)**: Measures the conductivity of water to estimate purity.
 6. **DS18B20**: A waterproof digital temperature sensor for water temperature monitoring.
+7. **Ultrasonic Sensor**: Measures distance to detect potential imposters or animals entering the field.
 
 ---
 

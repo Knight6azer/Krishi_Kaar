@@ -73,6 +73,10 @@ def check_alerts(sensor_data, crop_data):
     # 3. Crop Disease Alert
     if crop_data.get('label') == 'Diseased':
         send_email_alert("Crop Disease Detected", f"Disease detected with confidence {crop_data.get('confidence')}%")
+        
+    # 4. Imposter Alert (Ultrasonic Sensor)
+    if isinstance(sensor_data.get('distance'), (int, float)) and sensor_data['distance'] < 50:
+        send_email_alert("Imposter Detected", f"Motion nearby! Object distance: {sensor_data['distance']} cm")
 
 def sensor_loop():
     global latest_sensor_data, latest_crop_status
@@ -127,6 +131,60 @@ def api_sensors():
 @app.route('/api/crop_status')
 def api_crop_status():
     return jsonify(latest_crop_status)
+
+@app.route('/api/recommendations')
+def api_recommendations():
+    # Retrieve current sensor values or set defaults
+    n = latest_sensor_data.get('nitrogen', 50)
+    p = latest_sensor_data.get('phosphorus', 50)
+    k = latest_sensor_data.get('potassium', 50)
+    ph = latest_sensor_data.get('ph', 7.0)
+    soil_m = latest_sensor_data.get('soil_moisture', 50)
+    
+    # 1. Crop Recommendation (Mock Logic based on NPK and pH)
+    crop_rec = "Wheat"
+    if n > 100 and p > 60:
+        crop_rec = "Rice"
+    elif ph < 6.5:
+        crop_rec = "Potato"
+    elif k > 70:
+        crop_rec = "Tomato"
+        
+    # 2. Fertilizer Recommendation
+    fert_rec = "N/A"
+    if n < 40 and p < 40:
+        fert_rec = "NPK 19:19:19"
+    elif n < 40:
+        fert_rec = "Urea"
+    elif k < 40:
+        fert_rec = "Potash MOP"
+    elif p < 40:
+        fert_rec = "DAP"
+        
+    # 3. Water Supply Recommendation
+    water_req = "Normal (2-3 L/day)"
+    if soil_m < 30:
+        water_req = "High (5+ L/day)"
+    elif soil_m > 70:
+        water_req = "Low (0.5 L/day)"
+        
+    # 4. Current Market Price (Mocked based on Crop)
+    market_price = "₹2,500/Q (Wheat)"
+    if crop_rec == "Rice":
+        market_price = "₹3,200/Q (Rice)"
+    elif crop_rec == "Potato":
+        market_price = "₹1,500/Q (Potato)"
+    elif crop_rec == "Tomato":
+        market_price = "₹4,000/Q (Tomato)"
+        
+    return jsonify({
+        "crop_recommendation": crop_rec,
+        "fertilizer_recommendation": fert_rec,
+        "water_supply": water_req,
+        "market_price": market_price,
+        "crop_health": latest_crop_status.get('label', 'Waiting...'),
+        "intruder_alert": latest_sensor_data.get('distance', 100) < 50
+    })
 
 if __name__ == '__main__':
     # Start background threads for sensors and ML
