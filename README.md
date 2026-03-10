@@ -1,4 +1,4 @@
-# 🌱 Smart Agriculture & Environmental Monitoring System
+# 🌱 Krishi_Kaar & Environmental Monitoring System
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Knight6azer/Krishi_kaar/graphs/commit-activity)
@@ -41,8 +41,8 @@ MP(S6)/
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/smart-agriculture.git
-   cd smart-agriculture
+   git clone https://github.com/yourusername/Krishi_kaar.git
+   cd Krishi_kaar
    ```
 
 2. **Install Dependencies**:

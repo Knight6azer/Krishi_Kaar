@@ -1,5 +1,5 @@
 """
-Smart Agriculture & Environmental Monitoring System - Main Application
+Krishi_Kaar & Environmental Monitoring System - Main Application
 This Flask application serves as the central controller for the IoT system.
 It aggregates data from sensors, runs ML inference for crop disease and water quality,
 and serves a real-time dashboard.
