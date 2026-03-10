@@ -5,7 +5,7 @@ Project Code: **MP(S6)-2025**
 ---
 
 ### 1. ABSTRACT
-Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS and Temperature)** using a Raspberry Pi 4 controller, along with an **Ultrasonic Sensor** for imposter detection. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. It also features a **Recommendation Engine** that suggests optimal crops, fertilizers, water supply, and estimates market price. All data is visualized on a multilingual web-based dashboard (supporting English and 7 Indian languages), and an alert system notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
+Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS and Temperature)** using a Raspberry Pi 4 controller, along with an **Ultrasonic Sensor** for imposter detection. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. It also features a **Recommendation Engine** that suggests optimal crops, fertilizers, water supply, and estimates market price. All data is visualized on an extensively translated multilingual web-based dashboard (supporting English and 7 Indian languages), accompanied by dynamic UI elements like a "No Plant Detected" popup alert. An integrated alert system concurrently notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
 
 ---
 
@@ -22,8 +22,8 @@ Farmers often lack real-time data regarding their soil and water conditions, lea
 - To implement a Computer Vision model for identifying common crop diseases.
 - To develop a Machine Learning model for classifying irrigation water quality.
 - To build a Recommendation Engine providing insights on crop selection, fertilizers, and water needs.
-- To create a unified, multilingual web dashboard for data visualization and remote monitoring.
-- To implement an automated alert system for critical environmental thresholds and intruder detection.
+- To create a unified, extensively multilingual web dashboard for seamless global/local visualization.
+- To implement dynamic frontend UI elements (e.g., "No Plant Detected" popup) and automated alerts for critical environmental thresholds and intruder detection.
 
 ---
 

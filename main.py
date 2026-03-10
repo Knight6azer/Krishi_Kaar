@@ -111,7 +111,7 @@ def crop_inference_loop():
              # Mock result if no camera
              import random
              latest_crop_status = {
-                 "label": random.choice(["Healthy", "Healthy", "Healthy", "Diseased", "Other"]), 
+                 "label": random.choice(["Healthy", "Healthy", "Diseased", "No Plant"]), 
                  "confidence": random.randint(80, 99)
              }
         time.sleep(3)

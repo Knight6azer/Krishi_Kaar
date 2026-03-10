@@ -13,8 +13,9 @@ A low-cost, IoT-based precision farming solution that integrates **Machine Learn
 - **Crop Disease Detection**: Uses **MobileNetV2** (CNN) to identify plant diseases from camera feed.
 - **Water Quality Analysis**: Uses **Decision Tree Classifier** to determine safe/unsafe water conditions.
 - **Recommendation Engine**: Provides Crop, Fertilizer, Water, and Market Price recommendations based on sensing data.
-- **Multilingual Web Dashboard**: Interactive Flask-based interface translated into 7 major Indian languages + English.
+- **Extensive Multilingual UI**: Real-time translation of all dashboard labels, units, and statuses into 7 major Indian languages + English.
 - **Alert System & Imposter Detection**: Notifications for critical conditions and an Ultrasonic sensor to detect intruders.
+- **Dynamic Popups**: Subtle "No Plant Detected" toast notification when the camera frame is empty.
 
 ## 🛠️ Tech Stack
 
