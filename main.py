@@ -11,6 +11,7 @@ import time
 import sensors
 import water_ml
 import crop_cnn
+import presence_classifier
 import numpy as np
 
 app = Flask(__name__)
@@ -18,6 +19,7 @@ app = Flask(__name__)
 # Global variables to store latest data
 latest_sensor_data = {}
 latest_crop_status = {"label": "Waiting...", "confidence": "0"}
+latest_presence_status = {"label": "Waiting...", "confidence": "0"}
 camera = None
 
 def get_camera():
@@ -61,7 +63,7 @@ def send_email_alert(subject, body):
     # In a real scenario, you would configure SMTP server details here
     print(f"!!! ALERT !!! [{subject}] {body}")
 
-def check_alerts(sensor_data, crop_data):
+def check_alerts(sensor_data, crop_data, presence_data):
     # 1. Soil Moisture Alert
     if isinstance(sensor_data.get('soil_moisture'), (int, float)) and sensor_data['soil_moisture'] < 30:
         send_email_alert("Low Soil Moisture", f"Soil Moisture is critical: {sensor_data['soil_moisture']}%")
@@ -74,12 +76,14 @@ def check_alerts(sensor_data, crop_data):
     if crop_data.get('label') == 'Diseased':
         send_email_alert("Crop Disease Detected", f"Disease detected with confidence {crop_data.get('confidence')}%")
         
-    # 4. Imposter Alert (Ultrasonic Sensor)
-    if isinstance(sensor_data.get('distance'), (int, float)) and sensor_data['distance'] < 50:
+    # 4. Imposter Alert (Camera & Ultrasonic Sensor)
+    if presence_data.get('label') == 'Imposter':
+        send_email_alert("Imposter Detected", f"Imposter detected via camera! Confidence: {presence_data.get('confidence')}%")
+    elif isinstance(sensor_data.get('distance'), (int, float)) and sensor_data['distance'] < 50:
         send_email_alert("Imposter Detected", f"Motion nearby! Object distance: {sensor_data['distance']} cm")
 
 def sensor_loop():
-    global latest_sensor_data, latest_crop_status
+    global latest_sensor_data, latest_crop_status, latest_presence_status
     while True:
         readings = sensors.get_all_readings()
         
@@ -90,28 +94,37 @@ def sensor_loop():
         latest_sensor_data = readings
         
         # Check alerts
-        check_alerts(latest_sensor_data, latest_crop_status)
+        check_alerts(latest_sensor_data, latest_crop_status, latest_presence_status)
         
         time.sleep(2)
 
 def crop_inference_loop():
-    global latest_crop_status
+    global latest_crop_status, latest_presence_status
     cam = get_camera()
     while True:
         if cam is not None and cam.isOpened():
             success, frame = cam.read()
             if success:
-                # Run prediction
+                # Run crop prediction
                 result = crop_cnn.predict_crop_disease(frame)
-                # Format confidence as percentage
                 if 'confidence' in result:
                     result['confidence'] = round(result['confidence'] * 100, 1)
                 latest_crop_status = result
+                
+                # Run presence prediction
+                presence_result = presence_classifier.predict_presence(frame)
+                if 'confidence' in presence_result:
+                    presence_result['confidence'] = round(presence_result['confidence'] * 100, 1)
+                latest_presence_status = presence_result
         else:
              # Mock result if no camera
              import random
              latest_crop_status = {
                  "label": random.choice(["Healthy", "Healthy", "Diseased", "No Plant"]), 
+                 "confidence": random.randint(80, 99)
+             }
+             latest_presence_status = {
+                 "label": random.choice(["Crop", "Human", "Imposter"]),
                  "confidence": random.randint(80, 99)
              }
         time.sleep(3)
@@ -131,6 +144,10 @@ def api_sensors():
 @app.route('/api/crop_status')
 def api_crop_status():
     return jsonify(latest_crop_status)
+
+@app.route('/api/presence_status')
+def api_presence_status():
+    return jsonify(latest_presence_status)
 
 @app.route('/api/recommendations')
 def api_recommendations():
@@ -183,7 +200,8 @@ def api_recommendations():
         "water_supply": water_req,
         "market_price": market_price,
         "crop_health": latest_crop_status.get('label', 'Waiting...'),
-        "intruder_alert": latest_sensor_data.get('distance', 100) < 50
+        "presence_status": latest_presence_status.get('label', 'Waiting...'),
+        "intruder_alert": latest_presence_status.get('label') == 'Imposter' or (latest_sensor_data.get('distance', 100) < 50)
     })
 
 if __name__ == '__main__':
