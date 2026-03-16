@@ -88,7 +88,8 @@ def sensor_loop():
         readings = sensors.get_all_readings()
         
         # Predict Water Quality
-        water_quality = water_ml.predict_water_quality(readings['tds'], readings['water_temperature'])
+        # Since DS18B20 is removed (Arduino realignment), we use a default temp of 25.0C
+        water_quality = water_ml.predict_water_quality(readings['tds'], 25.0)
         readings['water_quality'] = water_quality
         
         latest_sensor_data = readings
