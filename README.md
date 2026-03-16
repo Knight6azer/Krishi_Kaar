@@ -13,10 +13,12 @@ A low-cost, IoT-based precision farming solution that integrates **Machine Learn
 - **Presence Detection**: Second MobileNetV2 model classifies frames as **Crop / Human / Imposter** — triggers camera-based imposter alerts
 - **Water Quality Analysis**: Decision Tree Classifier predicts **Safe / Moderate / Unsafe**
 - **Recommendation Engine**: Suggests Crop, Fertilizer, Water Supply, and Market Price based on NPK/pH sensor data
-- **Multilingual UI**: Real-time translation across 8 languages (English + 7 Indian languages)
-- **Alert System**: Dual-layer imposter detection via camera (ML) and Ultrasonic sensor
-- **Toast Notifications**: "No Plant Detected" popup when camera frame is empty
-- **Clean Light Theme**: White cards, green accents — readable and professional
+- **Multilingual UI**: Real-time translation supporting English and 7 Indian languages
+- **Premium Aesthetics**: Centered pill-shaped header with a modern glassmorphism effect
+- **Streamlined View**: Hide-on-demand "Live Monitoring & Alerts" section to focus on core data
+- **Dual-Layer Alerts**: Integrated camera-based ML vision and hardware Ultrasonic sensors
+- **Intelligent Recommendations**: AI-driven guidance for Crop, Fertilizer, and Water Needs
+- **Live Feed System**: Seamless MJPEG video streaming for real-time visual surveillance
 
 ## 🛠️ Tech Stack
 
