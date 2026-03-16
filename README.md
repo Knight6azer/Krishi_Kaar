@@ -4,11 +4,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Knight6azer/Krishi_kaar/graphs/commit-activity)
 
-A low-cost, IoT-based precision farming solution that integrates **Machine Learning** for crop disease detection, presence monitoring, and water quality assessment. Leverages Raspberry Pi 4 to monitor environmental parameters and provide actionable insights via a clean, multilingual web dashboard.
+A low-cost, IoT-based precision farming solution that integrates **Machine Learning** for crop disease detection, presence monitoring, and water quality assessment. Leverages Arduino Uno to monitor environmental parameters and provide actionable insights via a clean, multilingual web dashboard.
 
 ## 🚀 Features
 
-- **Real-time Monitoring**: Soil Moisture, Air Temp/Humidity, Water TDS & Temperature
+- **Real-time Monitoring**: Soil Moisture, Air Temp/Humidity, and Water TDS
 - **Crop Disease Detection**: MobileNetV2 CNN classifies camera frames as **Healthy / Diseased / No Plant**
 - **Presence Detection**: Second MobileNetV2 model classifies frames as **Crop / Human / Imposter** — triggers camera-based imposter alerts
 - **Water Quality Analysis**: Decision Tree Classifier predicts **Safe / Moderate / Unsafe**
@@ -24,7 +24,7 @@ A low-cost, IoT-based precision farming solution that integrates **Machine Learn
 
 | Layer | Technologies |
 |---|---|
-| Hardware | Raspberry Pi 4, MCP3008, DHT11, DS18B20, Soil & TDS Sensors, Ultrasonic, Webcam |
+| Hardware | Arduino Uno, DHT11, Soil & TDS Sensors, Ultrasonic, Webcam |
 | Software | Python 3, Flask, OpenCV, TensorFlow/Keras, Scikit-learn, JavaScript |
 
 ## 📂 Project Structure
