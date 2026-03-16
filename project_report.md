@@ -77,10 +77,12 @@ The system is built around a centralized controller (Raspberry Pi 4) which acts 
 - **DS18B20** uses the 1-Wire protocol (GPIO 4 usually, configurable).
 
 #### 5.2 Dashboard Development
-The dashboard is a responsive web application served by Flask.
-- **Backend API**: `/api/sensors` returns JSON data.
-- **Frontend**: JavaScript `fetch()` polls the API every 2 seconds to update the DOM without reloading the page.
-- **Video Stream**: A generator function yields JPEG frames from the camera to a `<img>` tag source, creating a seamless video feed.
+The dashboard is a responsive web application served by Flask, designed with a premium, minimalist aesthetic.
+- **Pill Navigation**: A floating, centered capsule-style header for a modern user experience.
+- **Toggleable Monitoring**: "Live Crop Vision" and "System Logs" are encapsulated in a hidden-by-default container, accessible via a dynamic "SHOW MONITORING" button to maintain a clean interface.
+- **Backend API**: `/api/sensors` and other specialized endpoints return JSON data for real-time updates.
+- **Frontend**: JavaScript `fetch()` polls these APIs to update the DOM without reloading the page.
+- **Video Stream**: A generator function yields JPEG frames from the camera to a `<img>` tag source, creating a seamless video feed within the monitoring section.
 
 ---
 
