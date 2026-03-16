@@ -5,7 +5,7 @@ Project Code: **MP(S6)-2025**
 ---
 
 ### 1. ABSTRACT
-Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS and Temperature)** using a Raspberry Pi 4 controller, along with an **Ultrasonic Sensor** for imposter detection. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. It also features a **Recommendation Engine** that suggests optimal crops, fertilizers, water supply, and estimates market price. All data is visualized on an extensively translated multilingual web-based dashboard (supporting English and 7 Indian languages), accompanied by dynamic UI elements like a "No Plant Detected" popup alert. An integrated alert system concurrently notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
+Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS)** using an **Arduino Uno** controller, along with an **Ultrasonic Sensor** for imposter detection. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. It also features a **Recommendation Engine** that suggests optimal crops, fertilizers, water supply, and estimates market price. All data is visualized on an extensively translated multilingual web-based dashboard (supporting English and 7 Indian languages), accompanied by dynamic UI elements like a "No Plant Detected" popup alert. An integrated alert system concurrently notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
 
 ---
 
@@ -31,18 +31,16 @@ Farmers often lack real-time data regarding their soil and water conditions, lea
 
 #### 3.1 Overview
 The system is built around a centralized controller (Raspberry Pi 4) which acts as the edge computing node. It interfaces with various analog and digital sensors to collect environmental data.
-- **Input Layer**: Sensors (Soil Moisture, DHT11, TDS, DS18B20) and Camera.
-- **Processing Layer**: Raspberry Pi reads sensor data, digitizes analog signals via MCP3008, and performs ML inference.
+- **Input Layer**: Sensors (Soil Moisture, DHT11, TDS) and Camera.
+- **Processing Layer**: Arduino Uno reads sensor data and interfaces with the Flask server for ML inference.
 - **Output Layer**: Flask Web Server (Dashboard) and Alert System (Email/Console).
 
 #### 3.2 Hardware Components
-1. **Raspberry Pi 4 Model B**: Selected for its high processing power (Quad-core Cortex-A72), 4GB RAM, and support for full Python ML libraries (TensorFlow, OpenCV).
-2. **MCP3008 ADC**: An 8-channel, 10-bit Analog-to-Digital Converter used to interface the analog Soil Moisture and TDS sensors with the Pi's digital GPIO.
-3. **Soil Moisture Sensor**: Capacitive/Resistive sensor measuring volumetric water content.
-4. **DHT11**: A basic, low-cost digital temperature and humidity sensor.
-5. **TDS Sensor (Total Dissolved Solids)**: Measures the conductivity of water to estimate purity.
-6. **DS18B20**: A waterproof digital temperature sensor for water temperature monitoring.
-7. **Ultrasonic Sensor**: Measures distance to detect potential imposters or animals entering the field.
+1. **Arduino Uno**: Selected for its reliability and widespread availability for embedded sensing tasks.
+2. **Soil Moisture Sensor**: Capacitive/Resistive sensor measuring volumetric water content via analog input.
+3. **DHT11**: A basic, low-cost digital temperature and humidity sensor.
+4. **TDS Sensor (Total Dissolved Solids)**: Measures the conductivity of water to estimate purity via analog input.
+5. **Ultrasonic Sensor**: Measures distance to detect potential imposters or animals entering the field.
 
 ---
 
