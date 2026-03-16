@@ -31,7 +31,7 @@ def train_water_model():
         pickle.dump(clf, f)
     print(f"Water model trained and saved to {MODEL_FILE}")
 
-def predict_water_quality(tds, temp):
+def predict_water_quality(tds, temp=25.0):
     if not os.path.exists(MODEL_FILE):
         print("Model not found. Training new model...")
         train_water_model()
