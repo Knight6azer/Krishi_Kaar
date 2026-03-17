@@ -1,10 +1,4 @@
-"""
-Krishi_Kaar & Environmental Monitoring System - Main Application
-This Flask application serves as the central controller for the IoT system.
-It aggregates data from sensors, runs ML inference for crop disease and water quality,
-and serves a real-time dashboard.
-"""
-from flask import Flask, render_template, Response, jsonify
+from flask import Flask, render_template, Response, jsonify, request
 import cv2
 import threading
 import time
@@ -12,26 +6,51 @@ import sensors
 import water_ml
 import crop_cnn
 import presence_classifier
+import agri_ai
 import numpy as np
+from pymongo import MongoClient
+from datetime import datetime
 
 app = Flask(__name__)
 
-# Global variables to store latest data
+# --- MongoDB Configuration ---
+try:
+    client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
+    db = client["krishi_kaar_db"]
+    sensor_history = db["sensor_history"]
+    system_config = db["system_config"]
+    # Check connection
+    client.server_info()
+    MONGO_ACTIVE = True
+    print("MongoDB Connected successfully.")
+except Exception as e:
+    MONGO_ACTIVE = False
+    print(f"MongoDB not found/active. Running without persistence. Error: {e}")
+
+# Global variables to store latest data and states
 latest_sensor_data = {}
 latest_crop_status = {"label": "Waiting...", "confidence": "0"}
 latest_presence_status = {"label": "Waiting...", "confidence": "0"}
+latest_ai_recommendations = {}
+
+# Operational States
+system_state = {
+    "mode": "Manual", # "Smart" or "Manual"
+    "pump": "OFF",    # "ON" or "OFF"
+    "farm_area": 5.0,
+    "crop_type": "Wheat",
+    "soil_type": "Loamy"
+}
+
 camera = None
 
 def get_camera():
     global camera
     if camera is None:
-        # Try to open camera (0 is usually the default webcam)
         camera = cv2.VideoCapture(0)
-        # If unable to open, we might need a fallback or keep trying
     return camera
 
 def generate_frames():
-    global latest_crop_status
     cam = get_camera()
     while True:
         if cam is not None and cam.isOpened():
@@ -39,15 +58,11 @@ def generate_frames():
             if not success:
                 break
             else:
-                # Run crop disease detection on this frame occasionally (not every frame to save resources)
-                # For demo, we can just save it to a global variable or run prediction logic here
-                # Here we just encode it for streaming
                 ret, buffer = cv2.imencode('.jpg', frame)
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
         else:
-             # Fallback if no camera (Mock black image)
              blank_image = np.zeros((480, 640, 3), np.uint8)
              cv2.putText(blank_image, "No Camera Found", (200, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
              ret, buffer = cv2.imencode('.jpg', blank_image)
@@ -56,48 +71,42 @@ def generate_frames():
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
              time.sleep(1)
 
-
-# Alert Logic
-def send_email_alert(subject, body):
-    # Placeholder for email sending logic using smtplib
-    # In a real scenario, you would configure SMTP server details here
-    print(f"!!! ALERT !!! [{subject}] {body}")
-
-def check_alerts(sensor_data, crop_data, presence_data):
-    # 1. Soil Moisture Alert
-    if isinstance(sensor_data.get('soil_moisture'), (int, float)) and sensor_data['soil_moisture'] < 30:
-        send_email_alert("Low Soil Moisture", f"Soil Moisture is critical: {sensor_data['soil_moisture']}%")
-        
-    # 2. Water Quality Alert
-    if sensor_data.get('water_quality') == 'Unsafe':
-        send_email_alert("Unsafe Water Quality", f"Water is Unsafe! TDS: {sensor_data.get('tds')} ppm")
-        
-    # 3. Crop Disease Alert
-    if crop_data.get('label') == 'Diseased':
-        send_email_alert("Crop Disease Detected", f"Disease detected with confidence {crop_data.get('confidence')}%")
-        
-    # 4. Imposter Alert (Camera & Ultrasonic Sensor)
-    if presence_data.get('label') == 'Imposter':
-        send_email_alert("Imposter Detected", f"Imposter detected via camera! Confidence: {presence_data.get('confidence')}%")
-    elif isinstance(sensor_data.get('distance'), (int, float)) and sensor_data['distance'] < 50:
-        send_email_alert("Imposter Detected", f"Motion nearby! Object distance: {sensor_data['distance']} cm")
-
 def sensor_loop():
-    global latest_sensor_data, latest_crop_status, latest_presence_status
+    global latest_sensor_data, latest_ai_recommendations, system_state
     while True:
         readings = sensors.get_all_readings()
         
         # Predict Water Quality
-        # Since DS18B20 is removed (Arduino realignment), we use a default temp of 25.0C
         water_quality = water_ml.predict_water_quality(readings['tds'], 25.0)
         readings['water_quality'] = water_quality
         
+        # Get AI recommendations (Irrigation, Fertilizer, Crop)
+        ai_output = agri_ai.get_recommendations(readings)
+        latest_ai_recommendations = ai_output
+        
+        # Smart Automation Logic
+        if system_state["mode"] == "Smart":
+            system_state["pump"] = ai_output["irrigation"]
+        
+        readings["pump_status"] = system_state["pump"]
+        readings["mode"] = system_state["mode"]
+        readings["timestamp"] = datetime.now()
+        
         latest_sensor_data = readings
         
-        # Check alerts
-        check_alerts(latest_sensor_data, latest_crop_status, latest_presence_status)
+        # Persistence to MongoDB
+        if MONGO_ACTIVE:
+            try:
+                sensor_history.insert_one(readings.copy())
+                # Keep only last 1000 records for performance
+                if sensor_history.count_documents({}) > 1000:
+                    oldest = sensor_history.find().sort("timestamp", 1).limit(100)
+                    for doc in oldest:
+                        sensor_history.delete_one({"_id": doc["_id"]})
+            except Exception as e:
+                print(f"Persistence error: {e}")
         
-        time.sleep(2)
+        time.sleep(3)
 
 def crop_inference_loop():
     global latest_crop_status, latest_presence_status
@@ -106,19 +115,16 @@ def crop_inference_loop():
         if cam is not None and cam.isOpened():
             success, frame = cam.read()
             if success:
-                # Run crop prediction
                 result = crop_cnn.predict_crop_disease(frame)
                 if 'confidence' in result:
                     result['confidence'] = round(result['confidence'] * 100, 1)
                 latest_crop_status = result
                 
-                # Run presence prediction
                 presence_result = presence_classifier.predict_presence(frame)
                 if 'confidence' in presence_result:
                     presence_result['confidence'] = round(presence_result['confidence'] * 100, 1)
                 latest_presence_status = presence_result
         else:
-             # Mock result if no camera
              import random
              latest_crop_status = {
                  "label": random.choice(["Healthy", "Healthy", "Diseased", "No Plant"]), 
@@ -128,7 +134,7 @@ def crop_inference_loop():
                  "label": random.choice(["Crop", "Human", "Imposter"]),
                  "confidence": random.randint(80, 99)
              }
-        time.sleep(3)
+        time.sleep(5)
 
 @app.route('/')
 def index():
@@ -142,71 +148,54 @@ def video_feed():
 def api_sensors():
     return jsonify(latest_sensor_data)
 
-@app.route('/api/crop_status')
-def api_crop_status():
-    return jsonify(latest_crop_status)
-
-@app.route('/api/presence_status')
-def api_presence_status():
-    return jsonify(latest_presence_status)
-
 @app.route('/api/recommendations')
 def api_recommendations():
-    # Retrieve current sensor values or set defaults
-    n = latest_sensor_data.get('nitrogen', 50)
-    p = latest_sensor_data.get('phosphorus', 50)
-    k = latest_sensor_data.get('potassium', 50)
-    ph = latest_sensor_data.get('ph', 7.0)
-    soil_m = latest_sensor_data.get('soil_moisture', 50)
-    
-    # 1. Crop Recommendation (Mock Logic based on NPK and pH)
-    crop_rec = "Wheat"
-    if n > 100 and p > 60:
-        crop_rec = "Rice"
-    elif ph < 6.5:
-        crop_rec = "Potato"
-    elif k > 70:
-        crop_rec = "Tomato"
-        
-    # 2. Fertilizer Recommendation
-    fert_rec = "N/A"
-    if n < 40 and p < 40:
-        fert_rec = "NPK 19:19:19"
-    elif n < 40:
-        fert_rec = "Urea"
-    elif k < 40:
-        fert_rec = "Potash MOP"
-    elif p < 40:
-        fert_rec = "DAP"
-        
-    # 3. Water Supply Recommendation
-    water_req = "Normal (2-3 L/day)"
-    if soil_m < 30:
-        water_req = "High (5+ L/day)"
-    elif soil_m > 70:
-        water_req = "Low (0.5 L/day)"
-        
-    # 4. Current Market Price (Mocked based on Crop)
-    market_price = "₹2,500/Q (Wheat)"
-    if crop_rec == "Rice":
-        market_price = "₹3,200/Q (Rice)"
-    elif crop_rec == "Potato":
-        market_price = "₹1,500/Q (Potato)"
-    elif crop_rec == "Tomato":
-        market_price = "₹4,000/Q (Tomato)"
-        
-    return jsonify({
-        "crop_recommendation": crop_rec,
-        "fertilizer_recommendation": fert_rec,
-        "water_supply": water_req,
-        "market_price": market_price,
-        "crop_health": latest_crop_status.get('label', 'Waiting...'),
-        "presence_status": latest_presence_status.get('label', 'Waiting...'),
-        "intruder_alert": latest_presence_status.get('label') == 'Imposter' or (latest_sensor_data.get('distance', 100) < 50)
+    # Return unified recommendations merging AI and UI needs
+    data = latest_ai_recommendations.copy()
+    data.update({
+        "pump_status": system_state["pump"],
+        "mode": system_state["mode"]
     })
+    return jsonify(data)
+
+@app.route('/api/control', methods=['POST'])
+def api_control():
+    global system_state
+    req = request.json
+    if "mode" in req:
+        system_state["mode"] = req["mode"]
+    if "pump" in req:
+        # Pump control only allowed in Manual mode
+        if system_state["mode"] == "Manual":
+            system_state["pump"] = req["pump"]
+    return jsonify({"status": "success", "state": system_state})
+
+@app.route('/api/config', methods=['POST'])
+def api_config():
+    global system_state
+    req = request.json
+    system_state.update(req)
+    if MONGO_ACTIVE:
+        system_config.update_one({"type": "farm_config"}, {"$set": system_state}, upsert=True)
+    return jsonify({"status": "success", "config": system_state})
+
+@app.route('/api/history')
+def api_history():
+    if not MONGO_ACTIVE:
+        return jsonify([])
+    # Return last 20 readings for graphs
+    history = list(sensor_history.find({}, {"_id": 0}).sort("timestamp", -1).limit(20))
+    return jsonify(history[::-1])
 
 if __name__ == '__main__':
-    # Start background threads for sensors and ML
+    # Load initial config
+    if MONGO_ACTIVE:
+        saved_config = system_config.find_one({"type": "farm_config"})
+        if saved_config:
+            system_state.update(saved_config)
+            if "_id" in system_state:
+                del system_state["_id"]
+
     t1 = threading.Thread(target=sensor_loop)
     t1.daemon = True
     t1.start()
@@ -215,6 +204,5 @@ if __name__ == '__main__':
     t2.daemon = True
     t2.start()
     
-    print("Starting Flask Server...")
-    print("Access the dashboard at http://localhost:5000")
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    print("Starting Krishi_kaar Industrial Server...")
+    app.run(host='0.0.0.0', port=5000, debug=True)
