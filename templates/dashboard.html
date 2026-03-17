@@ -317,37 +317,37 @@
                 <div class="panel-content">
                     <div class="info-group">
                         <div class="info-label" id="t_area">Area</div>
-                        <div class="info-value">7 acres</div>
+                        <div class="info-value" id="t_area_val">7 acres</div>
                     </div>
                     <div class="info-group">
                         <div class="info-label" id="t_location">Location</div>
-                        <div class="info-value">Maharashtra, India</div>
+                        <div class="info-value" id="t_location_val">Maharashtra, India</div>
                     </div>
                     
                     <div class="info-label" style="margin-bottom: 15px;" id="t_live_sensor">Live Sensor Data</div>
                     <ul class="sensor-data-list">
                         <li class="sensor-item">
-                            <span class="sensor-name">N (Nitrogen): <strong id="val-n">...</strong></span>
+                            <span class="sensor-name"><span id="t_n_label">N (Nitrogen)</span>: <strong id="val-n">...</strong></span>
                             <i class="fas fa-arrow-up status-icon" style="color: var(--accent-green)"></i>
                         </li>
                         <li class="sensor-item">
-                            <span class="sensor-name">P (Phosphorus): <strong id="val-p">...</strong></span>
+                            <span class="sensor-name"><span id="t_p_label">P (Phosphorus)</span>: <strong id="val-p">...</strong></span>
                             <i class="fas fa-tint status-icon" style="color: var(--accent-blue)"></i>
                         </li>
                         <li class="sensor-item">
-                            <span class="sensor-name">K (Potassium): <strong id="val-k">...</strong></span>
+                            <span class="sensor-name"><span id="t_k_label">K (Potassium)</span>: <strong id="val-k">...</strong></span>
                             <i class="fas fa-arrow-down status-icon" style="color: var(--accent-red)"></i>
                         </li>
                         <li class="sensor-item">
-                            <span class="sensor-name">pH Level: <strong id="val-ph">...</strong></span>
+                            <span class="sensor-name"><span id="t_ph_label">pH Level</span>: <strong id="val-ph">...</strong></span>
                             <i class="fas fa-sun status-icon" style="color: var(--accent-orange)"></i>
                         </li>
                         <li class="sensor-item">
-                            <span class="sensor-name">Air Temperature: <strong id="air-temp">...</strong>°C</span>
+                            <span class="sensor-name"><span id="t_temp_label">Air Temperature</span>: <strong id="air-temp">...</strong>°C</span>
                             <i class="fas fa-thermometer-half status-icon" style="color: var(--accent-orange)"></i>
                         </li>
                         <li class="sensor-item">
-                            <span class="sensor-name">Weather Status: <strong id="val-weather">Sunny</strong></span>
+                            <span class="sensor-name"><span id="t_weather_label">Weather Status</span>: <strong id="val-weather">Sunny</strong></span>
                             <i class="fas fa-broadcast-tower status-icon" style="color: var(--text-secondary)"></i>
                         </li>
                     </ul>
@@ -363,7 +363,7 @@
                         <img src="{{ url_for('static', filename='crop_choice.png') }}" class="feature-image" alt="Crops">
                         <div class="feature-info">
                             <h3 id="t_crop_choice">AI Crop Choice:</h3>
-                            <p>Optimized crop selection based on location and soil parameters.</p>
+                            <p id="t_desc_crop">Optimized crop selection based on location and soil parameters.</p>
                             <div style="font-weight: 800; color: var(--accent-green); font-size: 1.2rem;" id="rec-crop">Loading...</div>
                         </div>
                     </div>
@@ -371,7 +371,7 @@
                         <img src="{{ url_for('static', filename='irrigation.png') }}" class="feature-image" alt="Water">
                         <div class="feature-info">
                             <h3 id="t_irrigation">Irrigation & Water:</h3>
-                            <p>Smart irrigation logic driven by real-time moisture sensors.</p>
+                            <p id="t_desc_irr">Smart irrigation logic driven by real-time moisture sensors.</p>
                             <div style="font-weight: 800; color: var(--accent-blue); font-size: 1.2rem;" id="rec-water">Loading...</div>
                         </div>
                     </div>
@@ -379,7 +379,7 @@
                         <img src="{{ url_for('static', filename='fertilizer.png') }}" class="feature-image" alt="Fertilizer">
                         <div class="feature-info">
                             <h3 id="t_fertilizer">Fertilizer Plan:</h3>
-                            <p>Dynamic nutrient guidance to maximize yield and soil health.</p>
+                            <p id="t_desc_fert">Dynamic nutrient guidance to maximize yield and soil health.</p>
                             <div style="font-weight: 800; color: var(--accent-orange); font-size: 1.2rem;" id="rec-fert">Loading...</div>
                         </div>
                     </div>
@@ -387,7 +387,7 @@
                         <img src="{{ url_for('static', filename='soil_sensor.png') }}" class="feature-image" alt="Soil">
                         <div class="feature-info">
                             <h3 id="t_soil_log">Soil Health Log:</h3>
-                            <p>Continuous monitoring of TDS and other vital soil metrics.</p>
+                            <p id="t_desc_soil">Continuous monitoring of TDS and other vital soil metrics.</p>
                             <div style="font-weight: 800; color: var(--text-secondary); font-size: 1.2rem;" id="water-tds">Loading...</div>
                         </div>
                     </div>
@@ -408,14 +408,14 @@
                         <img src="{{ url_for('video_feed') }}" alt="Live Feed">
                     </div>
                     <div style="display: flex; gap: 40px; margin-top: 25px;">
-                         <div>Status: <span id="crop-status" class="status-badge status-safe">Healthy</span></div>
-                         <div>Presence: <span id="presence-status" class="status-badge status-safe">Crop</span></div>
+                         <div><span id="t_status_label">Status</span>: <span id="crop-status" class="status-badge status-safe">Healthy</span></div>
+                         <div><span id="t_presence_label">Presence</span>: <span id="presence-status" class="status-badge status-safe">Crop</span></div>
                     </div>
                 </section>
                 <section class="alerts-card">
                     <h2><i class="fas fa-bell"></i> <span id="t_logs">System Logs</span></h2>
                     <div id="alerts-container">
-                        <div class="alert-item" style="border-left-color: var(--accent-green);">Awaiting events...</div>
+                        <div class="alert-item" style="border-left-color: var(--accent-green);" id="t_awaiting">Awaiting events...</div>
                     </div>
                 </section>
             </div>
@@ -424,7 +424,7 @@
 
     <!-- SCRIPTS -->
     <script>
-          const translations = {
+        const translations = {
             "en": {
                 "t_main_title": "Krishi_Kaar AI Assistant", "t_farm_dashboard": "Farm Dashboard",
                 "t_ai_features": "AI Smart Features", "t_crop_choice": "AI Crop Choice:",
@@ -436,7 +436,17 @@
                 "Healthy": "Healthy", "Diseased": "Diseased", "No Plant": "No Plant",
                 "Crop": "Crop", "Human": "Human", "Imposter": "Imposter",
                 "Wheat": "Wheat", "Rice": "Rice", "Potato": "Potato", "Tomato": "Tomato",
-                "Normal": "Normal", "High": "High", "Low": "Low", "Safe": "Safe", "Unsafe": "Unsafe"
+                "Normal": "Normal", "High": "High", "Low": "Low", "Safe": "Safe", "Unsafe": "Unsafe",
+                "t_area_val": "7 acres", "t_location_val": "Maharashtra, India",
+                "t_n_label": "N (Nitrogen)", "t_p_label": "P (Phosphorus)", "t_k_label": "K (Potassium)",
+                "t_ph_label": "pH Level", "t_temp_label": "Air Temperature", "t_weather_label": "Weather Status",
+                "t_desc_crop": "Optimized crop selection based on location and soil parameters.",
+                "t_desc_irr": "Smart irrigation logic driven by real-time moisture sensors.",
+                "t_desc_fert": "Dynamic nutrient guidance to maximize yield and soil health.",
+                "t_desc_soil": "Continuous monitoring of TDS and other vital soil metrics.",
+                "t_status_label": "Status", "t_presence_label": "Presence", "t_awaiting": "Awaiting events...",
+                "Sunny": "Sunny", "Loading": "Loading...", "acres": "acres", "Lday": "L/day",
+                "NPK 19:19:19": "NPK 19:19:19", "Urea": "Urea", "Potash MOP": "Potash MOP", "DAP": "DAP"
             },
             "hi": {
                 "t_main_title": "कृषि_कार एआई सहायक", "t_farm_dashboard": "फार्म डैशबोर्ड",
@@ -449,7 +459,17 @@
                 "Healthy": "स्वस्थ", "Diseased": "रोगग्रस्त", "No Plant": "कोई पौधा नहीं",
                 "Crop": "फसल", "Human": "मानव", "Imposter": "घुसपैठिया",
                 "Wheat": "गेहूं", "Rice": "चावल", "Potato": "आलू", "Tomato": "टमाटर",
-                "Normal": "सामान्य", "High": "उच्च", "Low": "कम", "Safe": "सुरक्षित", "Unsafe": "असुरक्षित"
+                "Normal": "सामान्य", "High": "उच्च", "Low": "कम", "Safe": "सुरक्षित", "Unsafe": "असुरक्षित",
+                "t_area_val": "7 एकड़", "t_location_val": "महाराष्ट्र, भारत",
+                "t_n_label": "नाइट्रोजन (N)", "t_p_label": "फास्फोरस (P)", "t_k_label": "पोटेशियम (K)",
+                "t_ph_label": "पीएच स्तर", "t_temp_label": "हवा का तापमान", "t_weather_label": "मौसम की स्थिति",
+                "t_desc_crop": "स्थान और मृदा पैरामीटर के आधार पर अनुकूलित फसल चयन।",
+                "t_desc_irr": "वास्तविक समय नमी सेंसर द्वारा संचालित स्मार्ट सिंचाई तर्क।",
+                "t_desc_fert": "उपज और मृदा स्वास्थ्य को अधिकतम करने के लिए गतिशील पोषक तत्व मार्गदर्शन।",
+                "t_desc_soil": "टीडीएस और अन्य महत्वपूर्ण मृदा मापदंडों की निरंतर निगरानी।",
+                "t_status_label": "स्थिति", "t_presence_label": "उपस्थिति", "t_awaiting": "घटनाओं की प्रतीक्षा है...",
+                "Sunny": "धूप", "Loading": "लोड हो रहा है...", "acres": "एकड़", "Lday": "लीटर/दिन",
+                "NPK 19:19:19": "एनपीके 19:19:19", "Urea": "यूरिया", "Potash MOP": "पोटाश एमओपी", "DAP": "डीएपी"
             },
             "bn": {
                 "t_main_title": "কৃষি_কার এআই সহকারী", "t_farm_dashboard": "ফার্ম ড্যাশবোর্ড",
@@ -462,7 +482,17 @@
                 "Healthy": "সুস্থ", "Diseased": "রোগাক্রান্ত", "No Plant": "কোনো গাছ নেই",
                 "Crop": "ফসল", "Human": "মানুষ", "Imposter": "অনুপ্রবেশকারী",
                 "Wheat": "গম", "Rice": "ধান", "Potato": "আলু", "Tomato": "টমেটো",
-                "Normal": "স্বাভাবিক", "High": "উচ্চ", "Low": "নিম্ন", "Safe": "নিরাপদ", "Unsafe": "অনিরাপদ"
+                "Normal": "স্বাভাবিক", "High": "উচ্চ", "Low": "নিম্ন", "Safe": "নিরাপদ", "Unsafe": "অনিরাপদ",
+                "t_area_val": "7 একর", "t_location_val": "মহারাষ্ট্র, ভারত",
+                "t_n_label": "নাইট্রোজেন (N)", "t_p_label": "ফসফরাস (P)", "t_k_label": "পটাশিয়াম (K)",
+                "t_ph_label": "পিএইচ লেভেল", "t_temp_label": "বাতাসের তাপমাত্রা", "t_weather_label": "আবহাওয়া",
+                "t_desc_crop": "অবস্থান এবং মাটির প্যারামিটারের উপর ভিত্তি করে অপ্টিমাইজড ফসল নির্বাচন।",
+                "t_desc_irr": "রিয়েল-টাইম আর্দ্রতা সেন্সর দ্বারা চালিত স্মার্ট সেচ যুক্তি।",
+                "t_desc_fert": "ফলন এবং মাটির স্বাস্থ্য সর্বাধিক করার জন্য গতিশীল পুষ্টি নির্দেশিকা।",
+                "t_desc_soil": "টিডিএস এবং অন্যান্য গুরুত্বপূর্ণ মাটির মাপকাঠির ক্রমাগত পর্যবেক্ষণ।",
+                "t_status_label": "অবস্থা", "t_presence_label": "উপস্থিতি", "t_awaiting": "ইভেন্টের জন্য অপেক্ষা করা হচ্ছে...",
+                "Sunny": "রৌদ্রোজ্জ্বল", "Loading": "লোড হচ্ছে...", "acres": "একর", "Lday": "লিটার/দিন",
+                "NPK 19:19:19": "এনপিকে ১৯:১৯:১৯", "Urea": "ইউরিয়া", "Potash MOP": "পটাশ এমওপি", "DAP": "ডিএপি"
             },
             "mr": {
                 "t_main_title": "कृषी_कार एआय सहाय्यक", "t_farm_dashboard": "फार्म डॅशबोर्ड",
@@ -475,7 +505,17 @@
                 "Healthy": "निरोगी", "Diseased": "रोगग्रस्त", "No Plant": "रोप नाही",
                 "Crop": "पीक", "Human": "मानव", "Imposter": "घुसखोर",
                 "Wheat": "गहू", "Rice": "भात", "Potato": "बटाटा", "Tomato": "टोमॅटो",
-                "Normal": "सामान्य", "High": "उच्च", "Low": "कमी", "Safe": "सुरक्षित", "Unsafe": "असुरक्षित"
+                "Normal": "सामान्य", "High": "उच्च", "Low": "कमी", "Safe": "सुरक्षित", "Unsafe": "असुरक्षित",
+                "t_area_val": "7 एकर", "t_location_val": "महाराष्ट्र, भारत",
+                "t_n_label": "नायट्रोजन (N)", "t_p_label": "फॉस्फरस (P)", "t_k_label": "पोटॅशियम (K)",
+                "t_ph_label": "पीएच पातळी", "t_temp_label": "हवेचे तापमान", "t_weather_label": "हवामान स्थिती",
+                "t_desc_crop": "स्थान आणि जमिनीच्या मापदंडांवर आधारित अनुकूल पीक निवड.",
+                "t_desc_irr": "रिअल-टाइम ओलावा सेन्सरद्वारे संचालित स्मार्ट सिंचन तर्क.",
+                "t_desc_fert": "उत्पादन आणि जमिनीचे आरोग्य वाढवण्यासाठी गतिशील पोषक मार्गदर्शन.",
+                "t_desc_soil": "टीडीएस आणि इतर महत्त्वाच्या मृदा मापदंडांचे सतत निरीक्षण.",
+                "t_status_label": "स्थिती", "t_presence_label": "उपस्थिती", "t_awaiting": "घटनांची प्रतीक्षा करत आहे...",
+                "Sunny": "ऊन", "Loading": "लोड होत आहे...", "acres": "एकर", "Lday": "लिटर/दिवस",
+                "NPK 19:19:19": "एनपीके १९:१९:१९", "Urea": "युरिया", "Potash MOP": "पोटाश एमओपी", "DAP": "डीएपी"
             },
             "te": {
                 "t_main_title": "కృషి_కార్ AI అసిస్టెంట్", "t_farm_dashboard": "ఫార్మ్ డ్యాష్‌బోర్డ్",
@@ -488,20 +528,40 @@
                 "Healthy": "ఆరోగ్యకరమైన", "Diseased": "వ్యాధిగ్రస్తులు", "No Plant": "మొక్క లేదు",
                 "Crop": "పంట", "Human": "మనిషి", "Imposter": "దురాక్రమణదారుడు",
                 "Wheat": "గోధుమ", "Rice": "వరి", "Potato": "బంగాళదుంప", "Tomato": "టమోటా",
-                "Normal": "సాధారణ", "High": "ఎక్కువ", "Low": "తక్కువ", "Safe": "సురక్షితం", "Unsafe": "అసురక్షితం"
+                "Normal": "సాధారణ", "High": "ఎక్కువ", "Low": "తక్కువ", "Safe": "సురక్షితం", "Unsafe": "అసురక్షితం",
+                "t_area_val": "7 ఎకరాలు", "t_location_val": "మహారాష్ట్ర, భారతదేశం",
+                "t_n_label": "నత్రజని (N)", "t_p_label": "భాస్వరం (P)", "t_k_label": "పొటాషియం (K)",
+                "t_ph_label": "pH స్థాయి", "t_temp_label": "గాలి ఉష్ణోగ్రత", "t_weather_label": "వాతావరణం",
+                "t_desc_crop": "స్థానం మరియు నేల పారామితుల ఆధారంగా ఆప్టిమైజ్ చేసిన పంట ఎంపిక.",
+                "t_desc_irr": "రియల్ టైమ్ తేమ సెన్సార్ల ద్వారా నడిచే స్మార్ట్ నీటి పారుదల లాజిక్.",
+                "t_desc_fert": "దిగుబడి మరియు నేల ఆరోగ్యాన్ని పెంచడానికి డైనమిక్ పోషకాల మార్గదర్శకత్వం.",
+                "t_desc_soil": "TDS మరియు ఇతర కీలక నేల మెట్రిక్‌ల నిరంతర పర్యవేక్షణ.",
+                "t_status_label": "స్థితి", "t_presence_label": "ఉనికి", "t_awaiting": "ఈవెంట్‌ల కోసం వేచి ఉంది...",
+                "Sunny": "ఎండ", "Loading": "లోడ్ అవుతోంది...", "acres": "ఎకరాలు", "Lday": "లీటర్/రోజు",
+                "NPK 19:19:19": "ఎన్‌పికె 19:19:19", "Urea": "యూరియా", "Potash MOP": "పొటాష్ MOP", "DAP": "డిఎపి"
             },
             "ta": {
                 "t_main_title": "கிருஷி_கார் AI உதவியாளர்", "t_farm_dashboard": "பண்ணை டாஷ்போர்டு",
                 "t_ai_features": "AI ஸ்மார்ட் அம்சங்கள்", "t_crop_choice": "AI பயிர் தேர்வு:",
                 "t_irrigation": "நீர்ப்பாசனம் மற்றும் நீர்:", "t_fertilizer": "உரத் திட்டம்:",
                 "t_soil_log": "மண் சுகாதார பதிவு:", "t_area": "பகுதி", "t_location": "இடம்",
-                "t_live_sensor": "நேரடி சென்சார் தரவு", "t_weather": "வானிலை நிலை",
+                "t_live_sensor": "நேரடி சென்ார் தரவு", "t_weather": "வானிலை நிலை",
                 "t_vision": "நேரடி பார்வை", "t_logs": "கணினி பதிவுகள்",
                 "t_show_mon": "கண்காணிப்பைக் காட்டு", "t_hide_mon": "கண்காணிப்பை மறை",
                 "Healthy": "ஆரோக்கியமானது", "Diseased": "நோயுற்றது", "No Plant": "செடி இல்லை",
                 "Crop": "பயிர்", "Human": "மனிதன்", "Imposter": "ஊடுருவுபவர்",
                 "Wheat": "கோதுமை", "Rice": "அரிசி", "Potato": "உருளைக்கிழங்கு", "Tomato": "தக்காளி",
-                "Normal": "சாதாரண", "High": "அதிகம்", "Low": "குறைவு", "Safe": "பாதுகாப்பானது", "Unsafe": "பாதுகாப்பற்றது"
+                "Normal": "சாதாரண", "High": "அதிகம்", "Low": "குறைவு", "Safe": "பாதுகாப்பானது", "Unsafe": "பாதுகாப்பற்றது",
+                "t_area_val": "7 ஏக்கர்", "t_location_val": "மகாராட்டிரம், இந்தியா",
+                "t_n_label": "நைட்ரஜன் (N)", "t_p_label": "பாஸ்பரஸ் (P)", "t_k_label": "பொட்டாசியம் (K)",
+                "t_ph_label": "pH அளவு", "t_temp_label": "காற்றின் வெப்பநிலை", "t_weather_label": "வானிலை நிலை",
+                "t_desc_crop": "இருப்பிடம் மற்றும் மண் அளவுருக்களின் அடிப்படையில் உகந்த பயிர் தேர்வு.",
+                "t_desc_irr": "நிகழ்நேர ஈரப்பதம் சென்சார்களால் இயக்கப்படும் ஸ்மார்ட் நீர்ப்பாசன தர்க்கம்.",
+                "t_desc_fert": "மகசூல் மற்றும் மண் ஆரோக்கியத்தை அதிகரிக்க மாறும் ஊட்டச்சத்து வழிகாட்டுதல்.",
+                "t_desc_soil": "TDS and other vital metrics monitoring.",
+                "t_status_label": "நிலை", "t_presence_label": "இருப்பு", "t_awaiting": "நிகழ்வுகளுக்காக காத்திருக்கிறது...",
+                "Sunny": "வெயில்", "Loading": "ஏற்றுகிறது...", "acres": "ஏக்கர்", "Lday": "லிட்டர்/நாள்",
+                "NPK 19:19:19": "NPK 19:19:19", "Urea": "யூரியா", "Potash MOP": "பொட்டாஷ் MOP", "DAP": "டிஏபி"
             },
             "gu": {
                 "t_main_title": "કૃષિ_કાર AI આસિસ્ટન્ટ", "t_farm_dashboard": "ફાર્મ ડેશબોર્ડ",
@@ -514,12 +574,22 @@
                 "Healthy": "સ્વસ્થ", "Diseased": "રોગિષ્ઠ", "No Plant": "છોડ નથી",
                 "Crop": "પાક", "Human": "માનવ", "Imposter": "ઘુસણખોર",
                 "Wheat": "ઘઉં", "Rice": "ચોખા", "Potato": "બટાકા", "Tomato": "ટમેટા",
-                "Normal": "સામાન્ય", "High": "વધારે", "Low": "ઓછું", "Safe": "સુરક્ષિત", "Unsafe": "અસુરક્ષિત"
+                "Normal": "સામાન્ય", "High": "વધારે", "Low": "ઓછું", "Safe": "સુરક્ષિત", "Unsafe": "અસુરક્ષિત",
+                "t_area_val": "7 એકર", "t_location_val": " મહારાષ્ટ્ર, ભારત",
+                "t_n_label": "નાઇટ્રોજન (N)", "t_p_label": "ફોસ્ફરસ (P)", "t_k_label": "પોટેશિયમ (K)",
+                "t_ph_label": "pH સ્તર", "t_temp_label": "હવાનું તાપમાન", "t_weather_label": "હવામાન સ્થિતિ",
+                "t_desc_crop": "સ્થાન અને જમીનના પરિમાણો પર આધારિત પાક પસંદગી.",
+                "t_desc_irr": "રીઅલ-ટાઇમ ભેજ સેન્સર દ્વારા સંચાલિત સ્માર્ટ સિંચાઈ તર્ક.",
+                "t_desc_fert": "પાક અને જમીનના સ્વાસ્થ્યને વધારવા માટે માર્ગદર્શન.",
+                "t_desc_soil": "TDS અને અન્ય મહત્વપૂર્ણ જમીનના પરિમાણોનું સતત નિરીક્ષણ.",
+                "t_status_label": "સ્થિતિ", "t_presence_label": "હાજરી", "t_awaiting": "ઘટનાઓની પ્રતીક્ષા છે...",
+                "Sunny": "તડકો", "Loading": "લોડ થઈ રહ્યું છે...", "acres": "એકર", "Lday": "લિટર/દિવસ",
+                "NPK 19:19:19": "એનપીકે ૧૯:૧૯:૧૯", "Urea": "યુરિયા", "Potash MOP": "પોટાશ એમઓપી", "DAP": "ડીએપી"
             },
             "ur": {
                 "t_main_title": "کرشی_کار اے آئی اسسٹنٹ", "t_farm_dashboard": "فارم ڈیش بورڈ",
                 "t_ai_features": "اے آئی اسمارٹ خصوصیات", "t_crop_choice": "اے آئی فصل کا انتخاب:",
-                "t_irrigation": "آبپاشی اور پانی:", "t_fertilizer": "کھاد کا منصوبہ:",
+                "t_irrigation": "آبپاشی اور پانی:", "t_fertilizer": "کھاد का منصوبہ:",
                 "t_soil_log": "مٹی کی صحت کا لاگ:", "t_area": "علاقہ", "t_location": "مقام",
                 "t_live_sensor": "لائیو سینسر ڈیٹا", "t_weather": "موسم کی صورتحال",
                 "t_vision": "لائیو ویژن", "t_logs": "سسٹم لاگز",
@@ -527,7 +597,16 @@
                 "Healthy": "صحت مند", "Diseased": "بیمار", "No Plant": "کوئی پودا نہیں",
                 "Crop": "فصل", "Human": "انسان", "Imposter": "مداخلت کار",
                 "Wheat": "گندم", "Rice": "چاول", "Potato": "آلو", "Tomato": "ٹماٹر",
-                "Normal": "عام", "High": "زیادہ", "Low": "کم", "Safe": "محفوظ", "Unsafe": "غیر محفوظ"
+                "Normal": "عام", "High": "زیادہ", "Low": "کم", "Safe": "محفوظ", "Unsafe": "غیر محفوظ",
+                "t_area_val": "7 ایکڑ", "t_location_val": "مہاراشٹر، بھارت",
+                "t_n_label": "نائٹروجن (N)", "t_p_label": "فاسفورس (P)", "t_k_label": "پوٹاشیم (K)",
+                "t_ph_label": "پی ایچ کی سطح", "t_temp_label": "ہوا کا درجہ حرارت", "t_weather_label": "موسم کی صورتحال",
+                "t_desc_crop": "مقام اور مٹی کے پیرامیٹرز کی بنیاد پر بہتر فصل کا انتخاب۔",
+                "t_desc_irr": "ریئل ٹائم نمی کے سینسر کے ذریعے چلنے والی سمارٹ آبپاشی کی منطق۔",
+                "t_desc_fert": "پیداوار اور مٹی کے صحت کو بہتر بنانے کے لیے غذائی اجزاء کی رہنمائی۔",
+                "t_desc_soil": "ٹی ڈی ایس اور دیگر اہم مٹی کے پیرامیٹرز کی مستقل نگرانی۔",
+                "t_status_label": "صورتحال", "t_presence_label": "موجودگی", "t_awaiting": "واقعات کا انتظار ہے...",
+                "Sunny": "دھوپ", "Loading": "لوڈ ہو رہا ہے...", "acres": "ایکڑ", "Lday": "لیٹر/دن"
             }
         };
 
@@ -542,18 +621,13 @@
             currentLang = document.getElementById('lang-select').value;
             const dict = translations[currentLang] || translations['en'];
             
-            // Translate static elements
+            // Translate all elements with matching IDs
             for (let key in dict) {
                 const el = document.getElementById(key);
                 if (el) el.innerText = dict[key];
             }
             
-            // Update static labels that aren't dynamic
-            document.querySelectorAll('[data-t]').forEach(el => {
-                el.innerText = t(el.getAttribute('data-t'));
-            });
-
-            // Update button text specifically if toggled
+            // Specialized translation for button
             const section = document.getElementById('monitoring-section');
             const btn = document.querySelector('.monitoring-toggle');
             if (section.style.display === 'none') {
@@ -594,7 +668,6 @@
             }, 3000);
         }
 
-        // Add animations for popup
         const style = document.createElement('style');
         style.innerHTML = `
             @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -612,6 +685,7 @@
                     document.getElementById('val-p').innerText = t(data.phosphorus > 60 ? "High" : "Normal");
                     document.getElementById('val-k').innerText = t(data.potassium > 60 ? "High" : "Normal");
                     document.getElementById('water-tds').innerText = `${data.tds} ppm`;
+                    document.getElementById('val-weather').innerText = t('Sunny');
                 });
 
             fetch('/api/recommendations')
@@ -619,7 +693,11 @@
                 .then(data => {
                     document.getElementById('rec-crop').innerText = t(data.crop_recommendation);
                     document.getElementById('rec-fert').innerText = data.fertilizer_recommendation;
-                    document.getElementById('rec-water').innerText = t(data.water_supply.split(' ')[0]) + ' ' + data.water_supply.split(' ').slice(1).join(' ');
+                    
+                    const waterParts = data.water_supply.split(' ');
+                    const waterLevel = t(waterParts[0]);
+                    const waterDetails = waterParts.slice(1).join(' ').replace('L/day', t('Lday'));
+                    document.getElementById('rec-water').innerText = `${waterLevel} ${waterDetails}`;
                 });
 
             fetch('/api/crop_status')
