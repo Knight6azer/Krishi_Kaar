@@ -1,86 +1,53 @@
-# 🌱 Krishi_Kaar — Smart Agriculture & Environmental Monitoring System
+# Krishi_kaar: Industrial Smart Agriculture Platform
 
-[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Knight6azer/Krishi_kaar/graphs/commit-activity)
+[![Stack](https://img.shields.io/badge/Stack-Fullstack--AI-blue.svg)]()
 
-Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS)** using an **Arduino Uno** controller, along with an **Ultrasonic Sensor** for imposter detection. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. It also features a **Recommendation Engine** that suggests optimal crops, fertilizers, water supply, and estimates market price. All data is visualized on an extensively translated multilingual web-based dashboard (supporting English and 7 Indian languages: **Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, and Urdu**), accompanied by dynamic UI elements like a "No Plant Detected" popup alert. An integrated alert system concurrently notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
+Krishi_kaar is an industry-grade, startup-ready Smart Agriculture system. It leverages **IoT (Arduino Uno)**, **MongoDB**, and **Random Forest Machine Learning** to provide automated, data-driven farming assistance. 
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **Real-time Monitoring**: Soil Moisture, Air Temp/Humidity, and Water TDS
-- **Crop Disease Detection**: MobileNetV2 CNN classifies camera frames as **Healthy / Diseased / No Plant**
-- **Presence Detection**: Second MobileNetV2 model classifies frames as **Crop / Human / Imposter** — triggers camera-based imposter alerts
-- **Water Quality Analysis**: Decision Tree Classifier predicts **Safe / Moderate / Unsafe**
-- **Recommendation Engine**: Suggests Crop, Fertilizer, Water Supply, and Market Price based on NPK/pH sensor data
-- **Multilingual UI**: Real-time translation supporting English and 7 Indian languages (Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu)
-- **Premium Aesthetics**: Centered pill-shaped header with a modern glassmorphism effect
-- **Streamlined View**: Hide-on-demand "Live Monitoring & Alerts" section to focus on core data
-- **Dual-Layer Alerts**: Integrated camera-based ML vision and hardware Ultrasonic sensors
-- **Intelligent Recommendations**: AI-driven guidance for Crop, Fertilizer, and Water Needs
-- **Live Feed System**: Seamless MJPEG video streaming for real-time visual surveillance
+- **Industrial Dark Dashboard**: Professional UI with real-time analytics and Chart.js integration.
+- **Dual Operational Modes**: 
+    - **Smart Mode**: AI-driven automatic irrigation and pump control.
+    - **Manual Mode**: Direct user control with real-time override.
+- **Advanced Machine Learning**: Random Forest classification for irrigation, fertilization, and crop selection.
+- **Data Persistence**: MongoDB integration for historical sensor tracking and configuration storage.
+- **Farmer's Assistant**: Step-by-step guidance system for non-farmers based on AI predictions.
+- **Multilingual Support**: Fully localized interface for regional accessibility.
 
-## 🛠️ Tech Stack
+## 🛠️ Technical Stack
 
 | Layer | Technologies |
 |---|---|
-| Hardware | Arduino Uno, DHT11, Soil & TDS Sensors, Ultrasonic, Webcam |
-| Software | Python 3, Flask, OpenCV, TensorFlow/Keras, Scikit-learn, JavaScript |
+| **Hardware** | Arduino Uno, Soil Moisture, TDS, DHT11, Salinity (EC), Ultrasonic, Webcam |
+| **Backend** | Python 3, Flask, MongoDB, PyMongo |
+| **AI/ML** | Random Forest, CNN (MobileNetV2), Scikit-learn, TensorFlow |
+| **Frontend** | Vanilla JS, Chart.js, Font Awesome, Glassmorphism CSS |
 
-## 📂 Project Structure
+## 📂 Architecture
 
-```
-Krishi_Kaar/
-│
-├── main.py                  # Main Flask Application
-├── sensors.py               # Hardware Interface (Mock Mode for PC)
-├── crop_cnn.py              # Crop Disease Detection (Healthy / Diseased / No Plant)
-├── presence_classifier.py   # Presence Classifier (Crop / Human / Imposter)
-├── water_ml.py              # Water Quality Classification
-├── generate_graphs.py       # Report Graph Generator
-├── requirements.txt         # Python Dependencies
-└── templates/
-    └── dashboard.html       # Multilingual Web Dashboard (8 languages supported: EN + 7 Indian)
+```bash
+├── main.py               # Central Controller (Industrial Flask Server)
+├── agri_ai.py            # Random Forest Inference Engine
+├── sensors.py            # Arduino Hardware Interface
+├── crop_cnn.py           # MobileNetV2 Vision Logic
+├── templates/
+│   └── dashboard.html    # Professional Dark Dashboard
+└── static/               # High-fidelity assets
 ```
 
-## ⚙️ How to Run
+## ⚙️ Installation
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Knight6azer/Krishi_kaar.git
-   cd Krishi_kaar
-   ```
-
+1. **Prerequisites**: Python 3.9+, MongoDB Compass.
 2. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
-
-3. **Run the Application**:
+3. **Launch Server**:
    ```bash
    python main.py
    ```
-   *The system auto-detects PC mode and switches to Mock sensor data.*
 
-4. **Access the Dashboard**:
-   Open [http://localhost:5000](http://localhost:5000) in your browser.
-
-5. **Generate Report Graphs** (Optional):
-   ```bash
-   python generate_graphs.py
-   ```
-
-## 📊 Results
-
-| Model | Accuracy |
-|---|---|
-| Crop Disease CNN (Healthy/Diseased/No Plant) | ~92% |
-| Presence Classifier (Crop/Human/Imposter) | ~90% |
-| Water Quality Decision Tree | ~95% |
-
-- Sensor update latency: < 200ms
-- Camera inference runs every 3 seconds (CPU-efficient)
-
-## 📜 License
-
-MIT License — Designed for Mini Project (S6), 2025.
+---
+*Developed for the next generation of precision agriculture.*
