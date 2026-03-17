@@ -420,6 +420,10 @@
                 </section>
             </div>
         </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
           const translations = {
             "en": {
                 "t_main_title": "Krishi_Kaar AI Assistant", "t_farm_dashboard": "Farm Dashboard",
@@ -632,17 +636,6 @@
                 .then(data => {
                     const el = document.getElementById('presence-status');
                     el.innerText = t(data.label);
-                    el.className = `status-badge status-${data.label === 'Crop' ? 'safe' : 'warning'}`;
-                });
-        }
-
-        setInterval(updateData, 4000);
-        updateData();
-        translatePage();
-    </script>
-</body>
-</html>
-el.innerText = data.label;
                     el.className = `status-badge status-${data.label === 'Crop' ? 'safe' : 'warning'}`;
                 });
         }
