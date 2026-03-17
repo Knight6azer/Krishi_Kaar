@@ -4,6 +4,8 @@ tensorflow
 scikit-learn
 numpy
 matplotlib
+pymongo
+flask-pymongo
 # RPi.GPIO
 # Adafruit_DHT
 # spidev
