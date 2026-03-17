@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Knight6azer/Krishi_kaar/graphs/commit-activity)
 
-A low-cost, IoT-based precision farming solution that integrates **Machine Learning** for crop disease detection, presence monitoring, and water quality assessment. Leverages Arduino Uno to monitor environmental parameters and provide actionable insights via a clean, multilingual web dashboard.
+Precision agriculture is an emerging field that leverages technology to optimize crop yields and resource usage. This project presents a low-cost, IoT-based "Smart Agriculture & Environmental Monitoring System" designed to assist farmers in real-time decision-making. The system monitors critical soil and environmental parameters such as **soil moisture, air temperature, humidity, and water quality (TDS)** using an **Arduino Uno** controller, along with an **Ultrasonic Sensor** for imposter detection. Furthermore, it integrates **Artificial Intelligence (AI)** for crop health analysis, utilizing a **MobileNetV2 Convolutional Neural Network (CNN)** to detect plant diseases from images. It also features a **Recommendation Engine** that suggests optimal crops, fertilizers, water supply, and estimates market price. All data is visualized on an extensively translated multilingual web-based dashboard (supporting English and 7 Indian languages: **Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, and Urdu**), accompanied by dynamic UI elements like a "No Plant Detected" popup alert. An integrated alert system concurrently notifies the user of critical conditions. This prototype demonstrates the feasibility of combining IoT and ML to reduce agricultural losses and improve sustainability.
 
 ## 🚀 Features
 
@@ -13,7 +13,7 @@ A low-cost, IoT-based precision farming solution that integrates **Machine Learn
 - **Presence Detection**: Second MobileNetV2 model classifies frames as **Crop / Human / Imposter** — triggers camera-based imposter alerts
 - **Water Quality Analysis**: Decision Tree Classifier predicts **Safe / Moderate / Unsafe**
 - **Recommendation Engine**: Suggests Crop, Fertilizer, Water Supply, and Market Price based on NPK/pH sensor data
-- **Multilingual UI**: Real-time translation supporting English and 7 Indian languages
+- **Multilingual UI**: Real-time translation supporting English and 7 Indian languages (Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu)
 - **Premium Aesthetics**: Centered pill-shaped header with a modern glassmorphism effect
 - **Streamlined View**: Hide-on-demand "Live Monitoring & Alerts" section to focus on core data
 - **Dual-Layer Alerts**: Integrated camera-based ML vision and hardware Ultrasonic sensors
@@ -40,7 +40,7 @@ Krishi_Kaar/
 ├── generate_graphs.py       # Report Graph Generator
 ├── requirements.txt         # Python Dependencies
 └── templates/
-    └── dashboard.html       # Multilingual Web Dashboard (8 languages)
+    └── dashboard.html       # Multilingual Web Dashboard (8 languages supported: EN + 7 Indian)
 ```
 
 ## ⚙️ How to Run

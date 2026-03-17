@@ -16,7 +16,7 @@ def build_model():
     x = base_model.output
     x = GlobalAveragePooling2D()(x)
     x = Dense(128, activation='relu')(x)
-    predictions = Dense(3, activation='softmax')(x) # Healthy, Diseased, Other
+    predictions = Dense(3, activation='softmax')(x) # Healthy, Diseased, No Plant
     
     model = Model(inputs=base_model.input, outputs=predictions)
     
@@ -80,7 +80,7 @@ def predict_crop_disease(image_path_or_array):
         preds = model.predict(image)
         label_idx = np.argmax(preds)
         
-        labels = {0: "Healthy", 1: "Diseased", 2: "Other"}
+        labels = {0: "Healthy", 1: "Diseased", 2: "No Plant"}
         confidence = float(np.max(preds))
         
         return {"label": labels[label_idx], "confidence": confidence}

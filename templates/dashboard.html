@@ -298,9 +298,13 @@
                 <div class="nav-controls">
                     <select id="lang-select" onchange="translatePage()" style="padding: 6px 12px; border-radius: 20px; border: 1px solid #ddd; background: #fff; cursor: pointer;">
                         <option value="en">English</option>
-                        <option value="hi">हिंदी</option>
-                        <option value="mr">मराठी</option>
-                        <option value="ta">தமிழ்</option>
+                        <option value="hi">हिंदी (Hindi)</option>
+                        <option value="bn">বাংলা (Bengali)</option>
+                        <option value="mr">मराठी (Marathi)</option>
+                        <option value="te">తెలుగు (Telugu)</option>
+                        <option value="ta">தமிழ் (Tamil)</option>
+                        <option value="gu">ગુજરાતી (Gujarati)</option>
+                        <option value="ur">اردو (Urdu)</option>
                     </select>
                 </div>
             </header>
@@ -312,15 +316,15 @@
                 <div class="panel-header dashboard-header" id="t_farm_dashboard">Farm Dashboard</div>
                 <div class="panel-content">
                     <div class="info-group">
-                        <div class="info-label">Area</div>
+                        <div class="info-label" id="t_area">Area</div>
                         <div class="info-value">7 acres</div>
                     </div>
                     <div class="info-group">
-                        <div class="info-label">Location</div>
+                        <div class="info-label" id="t_location">Location</div>
                         <div class="info-value">Maharashtra, India</div>
                     </div>
                     
-                    <div class="info-label" style="margin-bottom: 15px;">Live Sensor Data</div>
+                    <div class="info-label" style="margin-bottom: 15px;" id="t_live_sensor">Live Sensor Data</div>
                     <ul class="sensor-data-list">
                         <li class="sensor-item">
                             <span class="sensor-name">N (Nitrogen): <strong id="val-n">...</strong></span>
@@ -398,8 +402,8 @@
         <!-- Hidden Monitoring Section -->
         <div id="monitoring-section" style="display: none;">
             <div class="secondary-container">
-                <section class="camera-card">
-                    <h2 style="margin-bottom: 20px;"><i class="fas fa-video"></i> Live Crop Vision</h2>
+                 <section class="camera-card">
+                    <h2 style="margin-bottom: 20px;"><i class="fas fa-video"></i> <span id="t_vision">Live Crop Vision</span></h2>
                     <div class="video-container">
                         <img src="{{ url_for('video_feed') }}" alt="Live Feed">
                     </div>
@@ -409,47 +413,149 @@
                     </div>
                 </section>
                 <section class="alerts-card">
-                    <h2><i class="fas fa-bell"></i> System Logs</h2>
+                    <h2><i class="fas fa-bell"></i> <span id="t_logs">System Logs</span></h2>
                     <div id="alerts-container">
                         <div class="alert-item" style="border-left-color: var(--accent-green);">Awaiting events...</div>
                     </div>
                 </section>
             </div>
         </div>
-    </div>
-
-    <!-- SCRIPTS -->
-    <script>
-        const translations = {
+          const translations = {
             "en": {
-                "t_main_title": "Krishi_Kaar AI Assistant",
-                "t_farm_dashboard": "Farm Dashboard",
-                "t_ai_features": "AI Smart Features",
-                "t_crop_choice": "AI Crop Choice:",
-                "t_irrigation": "Irrigation & Water:",
-                "t_fertilizer": "Fertilizer Plan:",
-                "t_soil_log": "Soil Health Log:",
+                "t_main_title": "Krishi_Kaar AI Assistant", "t_farm_dashboard": "Farm Dashboard",
+                "t_ai_features": "AI Smart Features", "t_crop_choice": "AI Crop Choice:",
+                "t_irrigation": "Irrigation & Water:", "t_fertilizer": "Fertilizer Plan:",
+                "t_soil_log": "Soil Health Log:", "t_area": "Area", "t_location": "Location",
+                "t_live_sensor": "Live Sensor Data", "t_weather": "Weather Status",
+                "t_vision": "Live Crop Vision", "t_logs": "System Logs",
+                "t_show_mon": "SHOW MONITORING & ALERTS", "t_hide_mon": "HIDE MONITORING & ALERTS",
                 "Healthy": "Healthy", "Diseased": "Diseased", "No Plant": "No Plant",
-                "Crop": "Crop", "Human": "Human", "Imposter": "Imposter"
+                "Crop": "Crop", "Human": "Human", "Imposter": "Imposter",
+                "Wheat": "Wheat", "Rice": "Rice", "Potato": "Potato", "Tomato": "Tomato",
+                "Normal": "Normal", "High": "High", "Low": "Low", "Safe": "Safe", "Unsafe": "Unsafe"
             },
             "hi": {
-                "t_main_title": "कृषि_कार एआई सहायक",
-                "t_farm_dashboard": "फार्म डैशबोर्ड",
-                "t_ai_features": "एआई स्मार्ट सुविधाएँ",
-                "t_crop_choice": "एआई फसल विकल्प:",
-                "t_irrigation": "सिंचाई और पानी:",
-                "t_fertilizer": "उर्वरक योजना:",
-                "t_soil_log": "मृदा स्वास्थ्य लॉग:",
-                "Healthy": "स्वस्थ", "Diseased": "रोगग्रस्त", "No Plant": "कोई पौधा नहीं"
+                "t_main_title": "कृषि_कार एआई सहायक", "t_farm_dashboard": "फार्म डैशबोर्ड",
+                "t_ai_features": "एआई स्मार्ट सुविधाएँ", "t_crop_choice": "एआई फसल विकल्प:",
+                "t_irrigation": "सिंचाई और पानी:", "t_fertilizer": "उर्वरक योजना:",
+                "t_soil_log": "मृदा स्वास्थ्य लॉग:", "t_area": "क्षेत्र", "t_location": "स्थान",
+                "t_live_sensor": "लाइव सेंसर डेटा", "t_weather": "मौसम की स्थिति",
+                "t_vision": "लाइव विज़न", "t_logs": "सिस्टम लॉग",
+                "t_show_mon": "निगरानी दिखाएं", "t_hide_mon": "निगरानी छुपाएं",
+                "Healthy": "स्वस्थ", "Diseased": "रोगग्रस्त", "No Plant": "कोई पौधा नहीं",
+                "Crop": "फसल", "Human": "मानव", "Imposter": "घुसपैठिया",
+                "Wheat": "गेहूं", "Rice": "चावल", "Potato": "आलू", "Tomato": "टमाटर",
+                "Normal": "सामान्य", "High": "उच्च", "Low": "कम", "Safe": "सुरक्षित", "Unsafe": "असुरक्षित"
+            },
+            "bn": {
+                "t_main_title": "কৃষি_কার এআই সহকারী", "t_farm_dashboard": "ফার্ম ড্যাশবোর্ড",
+                "t_ai_features": "এআই স্মার্ট বৈশিষ্ট্য", "t_crop_choice": "এআই ফসল নির্বাচন:",
+                "t_irrigation": "সেচ ও জল:", "t_fertilizer": "সার পরিকল্পনা:",
+                "t_soil_log": "মাটির স্বাস্থ্য লগ:", "t_area": "এলাকা", "t_location": "অবস্থান",
+                "t_live_sensor": "লাইভ সেন্সর ডেটা", "t_weather": "আবহাওয়া",
+                "t_vision": "লাইভ ভিশন", "t_logs": "সিস্টেম লগ",
+                "t_show_mon": "মনিটরিং দেখান", "t_hide_mon": "মনিটরিং লুকান",
+                "Healthy": "সুস্থ", "Diseased": "রোগাক্রান্ত", "No Plant": "কোনো গাছ নেই",
+                "Crop": "ফসল", "Human": "মানুষ", "Imposter": "অনুপ্রবেশকারী",
+                "Wheat": "গম", "Rice": "ধান", "Potato": "আলু", "Tomato": "টমেটো",
+                "Normal": "স্বাভাবিক", "High": "উচ্চ", "Low": "নিম্ন", "Safe": "নিরাপদ", "Unsafe": "অনিরাপদ"
+            },
+            "mr": {
+                "t_main_title": "कृषी_कार एआय सहाय्यक", "t_farm_dashboard": "फार्म डॅशबोर्ड",
+                "t_ai_features": "एआय स्मार्ट वैशिष्ट्ये", "t_crop_choice": "एआय पीक निवड:",
+                "t_irrigation": "सिंचन आणि पाणी:", "t_fertilizer": "खत योजना:",
+                "t_soil_log": "मृदा आरोग्य लॉग:", "t_area": "क्षेत्र", "t_location": "स्थान",
+                "t_live_sensor": "लाइव सेन्सर डेटा", "t_weather": "हवामान स्थिती",
+                "t_vision": "लाइव व्हिजन", "t_logs": "सिस्टम लॉग",
+                "t_show_mon": "देखरेख दाखवा", "t_hide_mon": "देखरेख लपवा",
+                "Healthy": "निरोगी", "Diseased": "रोगग्रस्त", "No Plant": "रोप नाही",
+                "Crop": "पीक", "Human": "मानव", "Imposter": "घुसखोर",
+                "Wheat": "गहू", "Rice": "भात", "Potato": "बटाटा", "Tomato": "टोमॅटो",
+                "Normal": "सामान्य", "High": "उच्च", "Low": "कमी", "Safe": "सुरक्षित", "Unsafe": "असुरक्षित"
+            },
+            "te": {
+                "t_main_title": "కృషి_కార్ AI అసిస్టెంట్", "t_farm_dashboard": "ఫార్మ్ డ్యాష్‌బోర్డ్",
+                "t_ai_features": "AI స్మార్ట్ ఫీచర్లు", "t_crop_choice": "AI పంట ఎంపిక:",
+                "t_irrigation": "నీటి పారుదల:", "t_fertilizer": "ఎరువుల ప్రణాళిక:",
+                "t_soil_log": "నేల ఆరోగ్య లాగ్:", "t_area": "ప్రాంతం", "t_location": "స్థానం",
+                "t_live_sensor": "లైవ్ సెన్సార్ డేటా", "t_weather": "వాతావరణం",
+                "t_vision": "లైవ్ విజన్", "t_logs": "సిస్టమ్ లాగ్స్",
+                "t_show_mon": "మొనిటరింగ్ చూపించు", "t_hide_mon": "మొనిటరింగ్ దాచు",
+                "Healthy": "ఆరోగ్యకరమైన", "Diseased": "వ్యాధిగ్రస్తులు", "No Plant": "మొక్క లేదు",
+                "Crop": "పంట", "Human": "మనిషి", "Imposter": "దురాక్రమణదారుడు",
+                "Wheat": "గోధుమ", "Rice": "వరి", "Potato": "బంగాళదుంప", "Tomato": "టమోటా",
+                "Normal": "సాధారణ", "High": "ఎక్కువ", "Low": "తక్కువ", "Safe": "సురక్షితం", "Unsafe": "అసురక్షితం"
+            },
+            "ta": {
+                "t_main_title": "கிருஷி_கார் AI உதவியாளர்", "t_farm_dashboard": "பண்ணை டாஷ்போர்டு",
+                "t_ai_features": "AI ஸ்மார்ட் அம்சங்கள்", "t_crop_choice": "AI பயிர் தேர்வு:",
+                "t_irrigation": "நீர்ப்பாசனம் மற்றும் நீர்:", "t_fertilizer": "உரத் திட்டம்:",
+                "t_soil_log": "மண் சுகாதார பதிவு:", "t_area": "பகுதி", "t_location": "இடம்",
+                "t_live_sensor": "நேரடி சென்சார் தரவு", "t_weather": "வானிலை நிலை",
+                "t_vision": "நேரடி பார்வை", "t_logs": "கணினி பதிவுகள்",
+                "t_show_mon": "கண்காணிப்பைக் காட்டு", "t_hide_mon": "கண்காணிப்பை மறை",
+                "Healthy": "ஆரோக்கியமானது", "Diseased": "நோயுற்றது", "No Plant": "செடி இல்லை",
+                "Crop": "பயிர்", "Human": "மனிதன்", "Imposter": "ஊடுருவுபவர்",
+                "Wheat": "கோதுமை", "Rice": "அரிசி", "Potato": "உருளைக்கிழங்கு", "Tomato": "தக்காளி",
+                "Normal": "சாதாரண", "High": "அதிகம்", "Low": "குறைவு", "Safe": "பாதுகாப்பானது", "Unsafe": "பாதுகாப்பற்றது"
+            },
+            "gu": {
+                "t_main_title": "કૃષિ_કાર AI આસિસ્ટન્ટ", "t_farm_dashboard": "ફાર્મ ડેશબોર્ડ",
+                "t_ai_features": "AI સ્માર્ટ ફીચર્સ", "t_crop_choice": "AI પાક પસંદગી:",
+                "t_irrigation": "સિંચાઈ અને પાણી:", "t_fertilizer": "ખાતર યોજના:",
+                "t_soil_log": "જમીન આરોગ્ય લોગ:", "t_area": "વિસ્તાર", "t_location": "સ્થાન",
+                "t_live_sensor": "લાઇવ સેન્સર ડેટા", "t_weather": "હવામાન સ્થિતિ",
+                "t_vision": "લાઇવ વિઝન", "t_logs": "સિસ્ટમ લોગ્સ",
+                "t_show_mon": "મોનિટરિંગ બતાવો", "t_hide_mon": "મોનિટરિંગ છુપાવો",
+                "Healthy": "સ્વસ્થ", "Diseased": "રોગિષ્ઠ", "No Plant": "છોડ નથી",
+                "Crop": "પાક", "Human": "માનવ", "Imposter": "ઘુસણખોર",
+                "Wheat": "ઘઉં", "Rice": "ચોખા", "Potato": "બટાકા", "Tomato": "ટમેટા",
+                "Normal": "સામાન્ય", "High": "વધારે", "Low": "ઓછું", "Safe": "સુરક્ષિત", "Unsafe": "અસુરક્ષિત"
+            },
+            "ur": {
+                "t_main_title": "کرشی_کار اے آئی اسسٹنٹ", "t_farm_dashboard": "فارم ڈیش بورڈ",
+                "t_ai_features": "اے آئی اسمارٹ خصوصیات", "t_crop_choice": "اے آئی فصل کا انتخاب:",
+                "t_irrigation": "آبپاشی اور پانی:", "t_fertilizer": "کھاد کا منصوبہ:",
+                "t_soil_log": "مٹی کی صحت کا لاگ:", "t_area": "علاقہ", "t_location": "مقام",
+                "t_live_sensor": "لائیو سینسر ڈیٹا", "t_weather": "موسم کی صورتحال",
+                "t_vision": "لائیو ویژن", "t_logs": "سسٹم لاگز",
+                "t_show_mon": "نگرانی دکھائیں", "t_hide_mon": "نگرانی چھپائیں",
+                "Healthy": "صحت مند", "Diseased": "بیمار", "No Plant": "کوئی پودا نہیں",
+                "Crop": "فصل", "Human": "انسان", "Imposter": "مداخلت کار",
+                "Wheat": "گندم", "Rice": "چاول", "Potato": "آلو", "Tomato": "ٹماٹر",
+                "Normal": "عام", "High": "زیادہ", "Low": "کم", "Safe": "محفوظ", "Unsafe": "غیر محفوظ"
             }
         };
 
+        let currentLang = 'en';
+
+        function t(key) {
+            const dict = translations[currentLang] || translations['en'];
+            return dict[key] || key;
+        }
+
         function translatePage() {
-            const lang = document.getElementById('lang-select').value;
-            const dict = translations[lang] || translations['en'];
+            currentLang = document.getElementById('lang-select').value;
+            const dict = translations[currentLang] || translations['en'];
+            
+            // Translate static elements
             for (let key in dict) {
                 const el = document.getElementById(key);
                 if (el) el.innerText = dict[key];
+            }
+            
+            // Update static labels that aren't dynamic
+            document.querySelectorAll('[data-t]').forEach(el => {
+                el.innerText = t(el.getAttribute('data-t'));
+            });
+
+            // Update button text specifically if toggled
+            const section = document.getElementById('monitoring-section');
+            const btn = document.querySelector('.monitoring-toggle');
+            if (section.style.display === 'none') {
+                btn.innerHTML = `<i class="fas fa-video"></i> ${t('t_show_mon')}`;
+            } else {
+                btn.innerHTML = `<i class="fas fa-eye-slash"></i> ${t('t_hide_mon')}`;
             }
         }
 
@@ -458,13 +564,39 @@
             const btn = document.querySelector('.monitoring-toggle');
             if (section.style.display === 'none') {
                 section.style.display = 'block';
-                btn.innerHTML = '<i class="fas fa-eye-slash"></i> HIDE MONITORING & ALERTS';
+                btn.innerHTML = `<i class="fas fa-eye-slash"></i> ${t('t_hide_mon')}`;
                 section.scrollIntoView({ behavior: 'smooth' });
             } else {
                 section.style.display = 'none';
-                btn.innerHTML = '<i class="fas fa-video"></i> SHOW MONITORING & ALERTS';
+                btn.innerHTML = `<i class="fas fa-video"></i> ${t('t_show_mon')}`;
             }
         }
+
+        function showNoPlantPopup() {
+            if (document.getElementById('no-plant-popup')) return;
+            const popup = document.createElement('div');
+            popup.id = 'no-plant-popup';
+            popup.style.cssText = `
+                position: fixed; top: 20px; right: 20px; background: var(--accent-red);
+                color: white; padding: 15px 25px; border-radius: 10px; z-index: 1000;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3); font-weight: bold;
+                animation: slideIn 0.3s ease-out;
+            `;
+            popup.innerText = `⚠️ ${t('No Plant')} !`;
+            document.body.appendChild(popup);
+            setTimeout(() => {
+                popup.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => popup.remove(), 300);
+            }, 3000);
+        }
+
+        // Add animations for popup
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        `;
+        document.head.appendChild(style);
 
         function updateData() {
             fetch('/api/sensors')
@@ -472,33 +604,45 @@
                 .then(data => {
                     document.getElementById('air-temp').innerText = data.air_temperature;
                     document.getElementById('val-ph').innerText = data.ph;
-                    document.getElementById('val-n').innerText = data.nitrogen > 100 ? "High" : "Normal";
-                    document.getElementById('val-p').innerText = data.phosphorus > 60 ? "High" : "Normal";
-                    document.getElementById('val-k').innerText = data.potassium > 60 ? "High" : "Normal";
+                    document.getElementById('val-n').innerText = t(data.nitrogen > 100 ? "High" : "Normal");
+                    document.getElementById('val-p').innerText = t(data.phosphorus > 60 ? "High" : "Normal");
+                    document.getElementById('val-k').innerText = t(data.potassium > 60 ? "High" : "Normal");
                     document.getElementById('water-tds').innerText = `${data.tds} ppm`;
                 });
 
             fetch('/api/recommendations')
                 .then(r => r.json())
                 .then(data => {
-                    document.getElementById('rec-crop').innerText = data.crop_recommendation;
+                    document.getElementById('rec-crop').innerText = t(data.crop_recommendation);
                     document.getElementById('rec-fert').innerText = data.fertilizer_recommendation;
-                    document.getElementById('rec-water').innerText = data.water_supply;
+                    document.getElementById('rec-water').innerText = t(data.water_supply.split(' ')[0]) + ' ' + data.water_supply.split(' ').slice(1).join(' ');
                 });
 
             fetch('/api/crop_status')
                 .then(r => r.json())
                 .then(data => {
                     const el = document.getElementById('crop-status');
-                    el.innerText = data.label;
+                    el.innerText = t(data.label);
                     el.className = `status-badge status-${data.label === 'Healthy' ? 'safe' : 'danger'}`;
+                    if (data.label === 'No Plant') showNoPlantPopup();
                 });
 
             fetch('/api/presence_status')
                 .then(r => r.json())
                 .then(data => {
                     const el = document.getElementById('presence-status');
-                    el.innerText = data.label;
+                    el.innerText = t(data.label);
+                    el.className = `status-badge status-${data.label === 'Crop' ? 'safe' : 'warning'}`;
+                });
+        }
+
+        setInterval(updateData, 4000);
+        updateData();
+        translatePage();
+    </script>
+</body>
+</html>
+el.innerText = data.label;
                     el.className = `status-badge status-${data.label === 'Crop' ? 'safe' : 'warning'}`;
                 });
         }

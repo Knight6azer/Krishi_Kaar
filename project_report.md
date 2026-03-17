@@ -22,7 +22,7 @@ Farmers often lack real-time data regarding their soil and water conditions, lea
 - To implement a Computer Vision model for identifying common crop diseases.
 - To develop a Machine Learning model for classifying irrigation water quality.
 - To build a Recommendation Engine providing insights on crop selection, fertilizers, and water needs.
-- To create a unified, extensively multilingual web dashboard for seamless global/local visualization.
+- To create a unified, extensively multilingual web dashboard for seamless global/local visualization (supporting 8 languages: English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu).
 - To implement dynamic frontend UI elements (e.g., "No Plant Detected" popup) and automated alerts for critical environmental thresholds and intruder detection.
 
 ---
