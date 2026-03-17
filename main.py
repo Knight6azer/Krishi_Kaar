@@ -1,4 +1,6 @@
-from flask import Flask, render_template, Response, jsonify, request
+from flask import Flask, render_template, Response, jsonify, request, redirect, url_for, flash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 import cv2
 import threading
 import time
@@ -7,16 +9,32 @@ import water_ml
 import crop_cnn
 import presence_classifier
 import agri_ai
+import translations
 import numpy as np
 from pymongo import MongoClient
 from datetime import datetime
+import os
+import requests
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
+
+# --- Weather Stub ---
+def get_weather(city="Delhi"):
+    # Real SaaS would use OWM API here
+    return {
+        "temp": 32,
+        "condition": "Partly Cloudy",
+        "humidity": 45,
+        "wind": 12,
+        "city": city
+    }
 
 # --- MongoDB Configuration ---
 try:
     client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
     db = client["krishi_kaar_db"]
+    users_coll = db["users"]
     sensor_history = db["sensor_history"]
     system_config = db["system_config"]
     # Check connection
@@ -27,11 +45,24 @@ except Exception as e:
     MONGO_ACTIVE = False
     print(f"MongoDB not found/active. Running without persistence. Error: {e}")
 
-# Global variables to store latest data and states
-latest_sensor_data = {}
-latest_crop_status = {"label": "Waiting...", "confidence": "0"}
-latest_presence_status = {"label": "Waiting...", "confidence": "0"}
-latest_ai_recommendations = {}
+# --- Authentication Setup ---
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth_page'
+
+class User(UserMixin):
+    def __init__(self, user_data):
+        self.id = str(user_data['_id'])
+        self.email = user_data['email']
+        self.name = user_data.get('name', 'Farmer')
+        self.experience = user_data.get('experience', 'Beginner')
+
+@login_manager.user_loader
+def load_user(user_id):
+    if not MONGO_ACTIVE: return None
+    from bson.objectid import ObjectId
+    user_data = users_coll.find_one({"_id": ObjectId(user_id)})
+    return User(user_data) if user_data else None
 
 # Operational States
 system_state = {
@@ -80,16 +111,23 @@ def sensor_loop():
         water_quality = water_ml.predict_water_quality(readings['tds'], 25.0)
         readings['water_quality'] = water_quality
         
-        # Get AI recommendations (Irrigation, Fertilizer, Crop)
+        # Get SaaS AI recommendations (Top crops, Health Score, etc)
         ai_output = agri_ai.get_recommendations(readings)
         latest_ai_recommendations = ai_output
         
-        # Smart Automation Logic
+        # Automation Mode Logic
         if system_state["mode"] == "Smart":
             system_state["pump"] = ai_output["irrigation"]
+        elif system_state["mode"] == "Rule":
+            # Simple Rule: Moisture < 30 triggers pump
+            if readings.get('soil_moisture', 50) < 30:
+                system_state["pump"] = "ON"
+            elif readings.get('soil_moisture', 50) > 60:
+                system_state["pump"] = "OFF"
         
         readings["pump_status"] = system_state["pump"]
         readings["mode"] = system_state["mode"]
+        readings["health_score"] = ai_output.get("health_score", 50)
         readings["timestamp"] = datetime.now()
         
         latest_sensor_data = readings
@@ -97,12 +135,11 @@ def sensor_loop():
         # Persistence to MongoDB
         if MONGO_ACTIVE:
             try:
+                # Add user context if possible
                 sensor_history.insert_one(readings.copy())
-                # Keep only last 1000 records for performance
                 if sensor_history.count_documents({}) > 1000:
                     oldest = sensor_history.find().sort("timestamp", 1).limit(100)
-                    for doc in oldest:
-                        sensor_history.delete_one({"_id": doc["_id"]})
+                    for doc in oldest: sensor_history.delete_one({"_id": doc["_id"]})
             except Exception as e:
                 print(f"Persistence error: {e}")
         
@@ -136,9 +173,57 @@ def crop_inference_loop():
              }
         time.sleep(5)
 
+@app.route('/auth')
+def auth_page():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    return render_template('auth.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    user_data = users_coll.find_one({"email": email})
+    
+    if user_data and check_password_hash(user_data['password'], password):
+        user_obj = User(user_data)
+        login_user(user_obj)
+        return redirect(url_for('index'))
+    
+    return redirect(url_for('auth_page', error="Invalid email or password"))
+
+@app.route('/signup', methods=['POST'])
+def signup():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    name = request.form.get('name')
+    experience = request.form.get('experience')
+    
+    if users_coll.find_one({"email": email}):
+        return redirect(url_for('auth_page', error="Email already exists"))
+    
+    hashed_pw = generate_password_hash(password, method='sha256')
+    new_user = {
+        "email": email,
+        "password": hashed_pw,
+        "name": name,
+        "experience": experience,
+        "farms": [{"name": "Default Farm", "area": 5.0, "soil": "Loamy"}]
+    }
+    users_coll.insert_one(new_user)
+    flash("Account created! Please login.")
+    return redirect(url_for('auth_page'))
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('auth_page'))
+
 @app.route('/')
+@login_required
 def index():
-    return render_template('dashboard.html')
+    return render_template('dashboard.html', user=current_user)
 
 @app.route('/video_feed')
 def video_feed():
@@ -148,13 +233,23 @@ def video_feed():
 def api_sensors():
     return jsonify(latest_sensor_data)
 
+@app.route('/api/translations/<lang>')
+def get_translations(lang):
+    return jsonify(translations.translations.get(lang, translations.translations['en']))
+
+@app.route('/api/weather')
+@login_required
+def api_weather():
+    return jsonify(get_weather("Bangalore"))
+
 @app.route('/api/recommendations')
+@login_required
 def api_recommendations():
-    # Return unified recommendations merging AI and UI needs
     data = latest_ai_recommendations.copy()
     data.update({
         "pump_status": system_state["pump"],
-        "mode": system_state["mode"]
+        "mode": system_state["mode"],
+        "user_exp": current_user.experience
     })
     return jsonify(data)
 

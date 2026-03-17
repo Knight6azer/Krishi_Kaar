@@ -1,4 +1,6 @@
 flask
+flask-login
+werkzeug
 opencv-python
 tensorflow
 scikit-learn

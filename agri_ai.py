@@ -98,23 +98,43 @@ def get_recommendations(readings):
             readings.get('salinity', 1.0)
         ]])
         
+        # Predictions
         irr_pred = models['irrigation'].predict(input_data)[0]
         fert_pred = models['fertilizer'].predict(input_data)[0]
-        crop_pred = models['crop'].predict(input_data)[0]
+        
+        # Top 3 Crops based on probabilities
+        crop_probs = models['crop'].predict_proba(input_data)[0]
+        crop_indices = np.argsort(crop_probs)[-3:][::-1]
         
         crop_labels = {0: "Wheat", 1: "Rice", 2: "Potato", 3: "Tomato", 4: "Maize"}
-        fert_labels = {0: "Optimize existing nutrients", 1: "Apply NPK 19:19:19", 2: "Apply Urea (Nitrogen)", 3: "Apply Potash (MOP)", 4: "Apply DAP"}
+        top_crops = [crop_labels.get(idx, "Unknown") for idx in crop_indices]
+        
+        fert_labels = {0: "Safe Balance", 1: "Apply NPK 19:19:19", 2: "Apply Urea", 3: "Apply Potash", 4: "Apply DAP"}
         irr_labels = {0: "OFF", 1: "ON"}
         
+        # Soil Health Score Calculation (Simplified logic)
+        # Ideal: pH 6-7, Salinity < 2, Moisture 40-70
+        ph = readings.get('ph', 7.0)
+        sal = readings.get('salinity', 1.0)
+        moist = readings.get('soil_moisture', 50)
+        
+        score = 100
+        score -= abs(ph - 6.5) * 10
+        score -= max(0, sal - 2) * 15
+        if moist < 20 or moist > 80: score -= 20
+        health_score = max(5, min(100, int(score)))
+
         return {
-            "crop": crop_labels.get(crop_pred, "Unknown"),
+            "top_crops": top_crops,
+            "crop": top_crops[0], # Primary one
             "fertilizer": fert_labels.get(fert_pred, "Stable"),
             "irrigation": irr_labels.get(irr_pred, "OFF"),
-            "irrigation_code": int(irr_pred)
+            "irrigation_code": int(irr_pred),
+            "health_score": health_score
         }
     except Exception as e:
         print(f"Inference error: {e}")
-        return {"crop": "N/A", "fertilizer": "Stable", "irrigation": "OFF", "irrigation_code": 0}
+        return {"top_crops": ["N/A"], "crop": "N/A", "fertilizer": "Stable", "irrigation": "OFF", "irrigation_code": 0, "health_score": 50}
 
 if __name__ == "__main__":
     train_agri_models()
