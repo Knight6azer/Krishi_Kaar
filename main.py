@@ -31,6 +31,11 @@ def get_weather(city="Delhi"):
     }
 
 # --- MongoDB Configuration ---
+# In-memory fallbacks for resilient development
+mock_users = []
+mock_history = []
+mock_config = {}
+
 try:
     client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
     db = client["krishi_kaar_db"]
@@ -43,7 +48,10 @@ try:
     print("MongoDB Connected successfully.")
 except Exception as e:
     MONGO_ACTIVE = False
-    print(f"MongoDB not found/active. Running without persistence. Error: {e}")
+    users_coll = None
+    sensor_history = None
+    system_config = None
+    print(f"MongoDB not found. Falling back to In-Memory storage. Error: {e}")
 
 # --- Authentication Setup ---
 login_manager = LoginManager()
@@ -59,10 +67,16 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    if not MONGO_ACTIVE: return None
-    from bson.objectid import ObjectId
-    user_data = users_coll.find_one({"_id": ObjectId(user_id)})
-    return User(user_data) if user_data else None
+    if MONGO_ACTIVE:
+        from bson.objectid import ObjectId
+        try:
+            user_data = users_coll.find_one({"_id": ObjectId(user_id)})
+            return User(user_data) if user_data else None
+        except: return None
+    else:
+        # Fallback to mock session
+        user_data = next((u for u in mock_users if str(u['_id']) == user_id), None)
+        return User(user_data) if user_data else None
 
 # Operational States
 system_state = {
@@ -142,6 +156,10 @@ def sensor_loop():
                     for doc in oldest: sensor_history.delete_one({"_id": doc["_id"]})
             except Exception as e:
                 print(f"Persistence error: {e}")
+        else:
+            # SaaS Fallback: Keep last 20 in memory
+            mock_history.append(readings.copy())
+            if len(mock_history) > 20: mock_history.pop(0)
         
         time.sleep(3)
 
@@ -183,7 +201,11 @@ def auth_page():
 def login():
     email = request.form.get('email')
     password = request.form.get('password')
-    user_data = users_coll.find_one({"email": email})
+    
+    if MONGO_ACTIVE:
+        user_data = users_coll.find_one({"email": email})
+    else:
+        user_data = next((u for u in mock_users if u['email'] == email), None)
     
     if user_data and check_password_hash(user_data['password'], password):
         user_obj = User(user_data)
@@ -199,18 +221,32 @@ def signup():
     name = request.form.get('name')
     experience = request.form.get('experience')
     
-    if users_coll.find_one({"email": email}):
+    # Check existence
+    if MONGO_ACTIVE:
+        existing = users_coll.find_one({"email": email})
+    else:
+        existing = next((u for u in mock_users if u['email'] == email), None)
+        
+    if existing:
         return redirect(url_for('auth_page', error="Email already exists"))
     
     hashed_pw = generate_password_hash(password, method='sha256')
     new_user = {
+        "_id": datetime.now().timestamp(), # Mock ID for memory mode
         "email": email,
         "password": hashed_pw,
         "name": name,
         "experience": experience,
         "farms": [{"name": "Default Farm", "area": 5.0, "soil": "Loamy"}]
     }
-    users_coll.insert_one(new_user)
+    
+    if MONGO_ACTIVE:
+        # Pymongo will overwrite _id with ObjectId if we don't handle it
+        del new_user["_id"]
+        users_coll.insert_one(new_user)
+    else:
+        mock_users.append(new_user)
+        
     flash("Account created! Please login.")
     return redirect(url_for('auth_page'))
 
@@ -249,7 +285,8 @@ def api_recommendations():
     data.update({
         "pump_status": system_state["pump"],
         "mode": system_state["mode"],
-        "user_exp": current_user.experience
+        "user_exp": current_user.experience,
+        "db_connected": MONGO_ACTIVE
     })
     return jsonify(data)
 
@@ -276,11 +313,12 @@ def api_config():
 
 @app.route('/api/history')
 def api_history():
-    if not MONGO_ACTIVE:
-        return jsonify([])
-    # Return last 20 readings for graphs
-    history = list(sensor_history.find({}, {"_id": 0}).sort("timestamp", -1).limit(20))
-    return jsonify(history[::-1])
+    if MONGO_ACTIVE:
+        # Return last 20 readings for graphs
+        history = list(sensor_history.find({}, {"_id": 0}).sort("timestamp", -1).limit(20))
+        return jsonify(history[::-1])
+    else:
+        return jsonify(mock_history)
 
 if __name__ == '__main__':
     # Load initial config
