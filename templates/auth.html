@@ -81,6 +81,7 @@
         </div>
 
         <div id="error" class="error-msg">Invalid credentials. Please try again.</div>
+        <div id="success" style="color: var(--accent-emerald); font-size: 0.85rem; text-align: center; display: none; margin-bottom: 1rem;"></div>
 
         <form id="auth-form" action="/login" method="POST">
             <div class="input-group">
@@ -132,11 +133,15 @@
             }
         }
 
-        // Handle error param if exists
+        // Handle error and success params if exists
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
             document.getElementById('error').style.display = 'block';
             document.getElementById('error').innerText = urlParams.get('error');
+        } else if (urlParams.has('success')) {
+            document.getElementById('success').style.display = 'block';
+            document.getElementById('success').innerText = urlParams.get('success');
+            switchTab('login');
         }
     </script>
 </body>

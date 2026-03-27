@@ -230,7 +230,7 @@ def signup():
     if existing:
         return redirect(url_for('auth_page', error="Email already exists"))
     
-    hashed_pw = generate_password_hash(password, method='sha256')
+    hashed_pw = generate_password_hash(password)
     new_user = {
         "_id": datetime.now().timestamp(), # Mock ID for memory mode
         "email": email,
@@ -247,8 +247,7 @@ def signup():
     else:
         mock_users.append(new_user)
         
-    flash("Account created! Please login.")
-    return redirect(url_for('auth_page'))
+    return redirect(url_for('auth_page', success="Account created! Please login."))
 
 @app.route('/logout')
 @login_required
