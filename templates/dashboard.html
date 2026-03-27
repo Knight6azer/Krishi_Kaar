@@ -156,9 +156,9 @@
         </nav>
         <div class="user-profile">
             <div class="avatar">{{ user.name[0] }}</div>
-            <div class="user-details">
-                <p style="font-weight: 700; font-size: 0.95rem;">{{ user.name }}</p>
-                <div class="badge">{{ user.experience }}</div>
+            <div class="user-info">
+                <h3>{{ user.name }}</h3>
+                <span class="badge" data-i18n="badge_{{ user.experience.lower() if user.experience else 'beginner' }}">{{ user.experience }}</span>
             </div>
         </div>
     </aside>
@@ -172,16 +172,16 @@
             </div>
             <div class="selector-group">
                 <div class="weather-box" id="weather-widget">
-                    <i class="fas fa-sun" style="font-size: 1.5rem; color: var(--accent-amber);"></i>
-                    <div class="weather-info">
-                        <span style="font-weight: 700; font-size: 1.1rem;">32°C</span>
-                        <span style="font-size: 0.7rem; color: var(--text-secondary);">Clear, Bangalore</span>
+                    <i class="fas fa-cloud-sun"></i>
+                    <div>
+                        <b id="weather-temp">32°C</b>
+                        <span data-i18n="weather_desc">Clear, Bangalore</span>
                     </div>
                 </div>
                 <select id="farm-selector">
-                    <option>Default Farm</option>
-                    <option>North Wing</option>
-                    <option>Greenhouse 01</option>
+                    <option data-i18n="default_farm">Default Farm</option>
+                    <option data-i18n="north_wing">North Wing</option>
+                    <option data-i18n="greenhouse">Greenhouse 01</option>
                 </select>
                 <select id="lang-selector" onchange="changeLanguage(this.value)">
                     <option value="en">English</option>
@@ -226,7 +226,7 @@
                     </div>
                     <div class="vital-item">
                         <div class="vital-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple);"><i class="fas fa-leaf"></i></div>
-                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="npk_ratio">N-P-K Ratio</p><p class="vital-val" style="font-size: 1rem;">120:45:60</p></div>
+                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="npk_ratio">N-P-K Ratio</p><p class="vital-val" style="font-size: 1rem;" id="val-npk">120:45:60</p></div>
                     </div>
                     <div class="vital-item" style="grid-column: span 2;">
                         <div class="vital-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-amber);"><i class="fas fa-vial"></i></div>
@@ -306,12 +306,31 @@
         let pumpState = "OFF";
         let modeState = "Manual";
 
+        const digitMap = {
+            'hi': ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'],
+            'mr': ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'],
+            'gu': ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'],
+            'ta': ['௦', '௧', '௨', '௩', '௪', '௫', '௬', '௭', '௮', '௯'],
+            'te': ['౦', '౧', '౨', '౩', '౪', '౫', '౬', '౭', '౮', '౯'],
+            'kn': ['೦', '೧', '೨', '೩', '೪', '೫', '೬', '೭', '೮', '೯'],
+            'ur': ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+        };
+
+        function formatLocalNumber(num, lang) {
+            if (num === null || num === undefined) return "--";
+            let str = String(num); // Ensure num is a string for replacement
+            if (digitMap[lang]) {
+                return str.replace(/[0-9]/g, d => digitMap[lang][parseInt(d)]);
+            }
+            return str;
+        }
+
         async function changeLanguage(lang) {
             currentLang = lang;
             const res = await fetch(`/api/translations/${lang}`);
             tData = await res.json();
             applyTranslations();
-            updateDashboard(); // Refetch for dynamic translated content if any
+            updateDashboard(); // Refetch for dynamic translated content
         }
 
         function applyTranslations() {
@@ -360,13 +379,15 @@
 
         async function updateDashboard() {
             const sRes = await fetch('/api/sensors'); const sData = await sRes.json();
-            document.getElementById('val-moisture').innerText = sData.soil_moisture;
-            document.getElementById('val-soil-temp').innerText = sData.soil_temperature || "--";
-            document.getElementById('val-air-temp').innerText = sData.air_temperature || "--";
-            document.getElementById('val-humidity').innerText = sData.humidity || "--";
-            document.getElementById('val-salinity').innerText = sData.salinity;
-            document.getElementById('val-ph').innerText = sData.ph;
-            document.getElementById('val-health-score').innerText = sData.health_score || "--";
+            document.getElementById('val-moisture').innerText = formatLocalNumber(sData.soil_moisture, currentLang);
+            document.getElementById('val-soil-temp').innerText = formatLocalNumber(sData.soil_temperature, currentLang) || "--";
+            document.getElementById('val-air-temp').innerText = formatLocalNumber(sData.air_temperature, currentLang) || "--";
+            document.getElementById('val-humidity').innerText = formatLocalNumber(sData.humidity, currentLang) || "--";
+            document.getElementById('val-salinity').innerText = formatLocalNumber(sData.salinity, currentLang);
+            document.getElementById('val-ph').innerText = formatLocalNumber(sData.ph, currentLang);
+            document.getElementById('val-health-score').innerText = formatLocalNumber(sData.health_score, currentLang) || "--";
+            document.getElementById('val-npk').innerText = formatLocalNumber("120:45:60", currentLang);
+            document.getElementById('weather-temp').innerText = formatLocalNumber("32", currentLang) + "°C";
             
             // Radial Update
             healthChart.data.datasets[0].data = [sData.health_score || 0, 100 - (sData.health_score || 0)];
@@ -376,13 +397,16 @@
             pumpState = dash.pump_status; modeState = dash.mode;
             
             // DB Status Alert
-            const toast = document.getElementById('alert-toast');
-            if (dash.db_connected === false) {
-                toast.innerText = "DATABASE OFFLINE: Operating in Memory Mode (No Persistence)";
-                toast.style.display = 'block';
-                toast.style.background = '#f59e0b';
-            } else {
-                toast.style.display = 'none';
+            const existingToast = document.getElementById('db-toast');
+            if (dash.db_connected === false && !existingToast) {
+                const toast = document.createElement('div');
+                toast.id = 'db-toast';
+                toast.className = 'alert-toast';
+                toast.innerHTML = `<i class="fas fa-database"></i> <span data-i18n="db_error">DATABASE OFFLINE: Operating in Memory Mode (No Persistence)</span>`;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 5000);
+            } else if (dash.db_connected === true && existingToast) {
+                existingToast.remove();
             }
 
             document.getElementById('val-fert').innerText = dash.fertilizer;
@@ -395,17 +419,14 @@
             const pViz = document.getElementById('pump-viz');
             if (pumpState === 'ON') {
                 pViz.classList.add('active-pump');
-                document.getElementById('pump-label').innerText = "PUMP RUNNING";
-                document.getElementById('pump-btn').innerText = "STOP OVERRIDE";
+                document.getElementById('pump-label').setAttribute('data-i18n', 'pump_run');
+                document.getElementById('pump-btn').setAttribute('data-i18n', 'btn_stop');
             } else {
                 pViz.classList.remove('active-pump');
-                document.getElementById('pump-label').innerText = "SYSTEM STANDBY";
-                document.getElementById('pump-btn').innerText = "MANUAL START";
+                document.getElementById('pump-label').setAttribute('data-i18n', 'pump_standby');
+                document.getElementById('pump-btn').setAttribute('data-i18n', 'btn_manual');
             }
             
-            // Re-apply translations for any dynamically rendered template areas if needed
-            if (Object.keys(tData).length > 0) applyTranslations();
-
             // Crops
             const cropBox = document.getElementById('crop-ranks');
             cropBox.innerHTML = '';
@@ -413,12 +434,24 @@
                 cropBox.innerHTML += `
                     <div class="crop-item">
                         <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div class="crop-rank">${i+1}</div>
+                            <div class="crop-rank">#${formatLocalNumber(i+1, currentLang)}</div>
                             <span style="font-weight: 600;">${c}</span>
                         </div>
                         <i class="fas fa-chevron-right" style="font-size: 0.7rem; color: var(--text-secondary);"></i>
                     </div>`;
             });
+
+            // Vision
+            const statusTypes = ['stat_healthy', 'stat_diseased', 'stat_noplant'];
+            const presTypes = ['pres_crop', 'pres_human', 'pres_imposter'];
+            const vizH = statusTypes[Math.floor(Math.random()*statusTypes.length)];
+            const vizP = presTypes[Math.floor(Math.random()*presTypes.length)];
+            document.getElementById('viz-health').setAttribute('data-i18n', vizH);
+            document.getElementById('viz-presence').setAttribute('data-i18n', vizP);
+            document.getElementById('viz-health').style.color = vizH==='stat_healthy' ? 'var(--accent-emerald)' : 'var(--text-primary)';
+            
+            // Re-apply translations for any dynamically rendered template areas if needed
+            if (Object.keys(tData).length > 0) applyTranslations();
         }
 
         async function updateHistory() {

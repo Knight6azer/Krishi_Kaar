@@ -67,52 +67,83 @@
     </style>
 </head>
 <body>
+    <div style="position: absolute; top: 1rem; right: 1rem; z-index: 10;">
+        <select id="lang-selector" onchange="changeLanguage(this.value)" style="padding: 0.5rem; background: rgba(30,41,59,0.8); color: white; border: 1px solid var(--border-glass); border-radius: 8px; outline: none;">
+            <option value="en">English</option>
+            <option value="hi">हिंदी (Hindi)</option>
+            <option value="mr">मराठी (Marathi)</option>
+            <option value="gu">ગુજરાતી (Gujarati)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="kn">ಕನ್ನಡ (Kannada)</option>
+            <option value="ur">اردو (Urdu)</option>
+        </select>
+    </div>
     <div class="bg-mesh"></div>
     <div class="auth-card">
         <div class="header">
             <i class="fas fa-leaf"></i>
             <h1>Krishi_kaar</h1>
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">SaaS Smart Agriculture</p>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;" data-i18n="saas_subtitle">SaaS Smart Agriculture</p>
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('login')">LOGIN</button>
-            <button class="tab-btn" onclick="switchTab('signup')">SIGN UP</button>
+            <button class="tab-btn active" onclick="switchTab('login')" data-i18n="login">LOGIN</button>
+            <button class="tab-btn" onclick="switchTab('signup')" data-i18n="signup">SIGN UP</button>
         </div>
 
-        <div id="error" class="error-msg">Invalid credentials. Please try again.</div>
-        <div id="success" style="color: var(--accent-emerald); font-size: 0.85rem; text-align: center; display: none; margin-bottom: 1rem;"></div>
+        <div id="error" class="error-msg" data-i18n="err_invalid">Invalid credentials. Please try again.</div>
+        <div id="success" style="color: var(--accent-emerald); font-size: 0.85rem; text-align: center; display: none; margin-bottom: 1rem;" data-i18n="succ_created">Account created! Please login.</div>
 
         <form id="auth-form" action="/login" method="POST">
             <div class="input-group">
-                <label>Email Address</label>
-                <input type="email" name="email" required placeholder="farmer@krishi.com">
+                <label data-i18n="lbl_email">Email Address</label>
+                <input type="email" name="email" required placeholder="farmer@krishi.com" id="in_email">
             </div>
             <div class="input-group">
-                <label>Password</label>
-                <input type="password" name="password" required placeholder="••••••••">
+                <label data-i18n="lbl_pass">Password</label>
+                <input type="password" name="password" required placeholder="••••••••" id="in_pass">
             </div>
             
             <div id="signup-fields" style="display: none; flex-direction: column; gap: 1.2rem;">
                 <div class="input-group">
-                    <label>Full Name</label>
-                    <input type="text" name="name" placeholder="John Doe">
+                    <label data-i18n="lbl_name">Full Name</label>
+                    <input type="text" name="name" placeholder="John Doe" id="in_name">
                 </div>
                 <div class="input-group">
-                    <label>Farming Experience</label>
+                    <label data-i18n="lbl_exp">Farming Experience</label>
                     <select name="experience">
-                        <option value="Beginner">Beginner (0-2 yrs)</option>
-                        <option value="Advanced">Advanced (2-5 yrs)</option>
-                        <option value="Expert">Expert (5+ yrs)</option>
+                        <option value="Beginner" data-i18n="badge_beginner">Beginner (0-2 yrs)</option>
+                        <option value="Advanced" data-i18n="badge_advanced">Advanced (2-5 yrs)</option>
+                        <option value="Expert" data-i18n="badge_expert">Expert (5+ yrs)</option>
                     </select>
                 </div>
             </div>
 
-            <button type="submit" class="btn-auth" id="submit-btn">ACCESS DASHBOARD</button>
+            <button type="submit" class="btn-auth" id="submit-btn" data-i18n="btn_login">ACCESS DASHBOARD</button>
         </form>
     </div>
 
     <script>
+        let tData = {};
+
+        async function changeLanguage(lang) {
+            const res = await fetch(`/api/translations/${lang}`);
+            tData = await res.json();
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (tData[key]) el.innerText = tData[key];
+            });
+            localStorage.setItem('krishi_lang', lang);
+        }
+
+        const savedLang = localStorage.getItem('krishi_lang');
+        if (savedLang && savedLang !== 'en') {
+            document.getElementById('lang-selector').value = savedLang;
+            changeLanguage(savedLang);
+        }
+
         function switchTab(type) {
             const tabs = document.querySelectorAll('.tab-btn');
             const signupFields = document.getElementById('signup-fields');
@@ -123,12 +154,14 @@
             if (type === 'login') {
                 tabs[0].classList.add('active');
                 signupFields.style.display = 'none';
-                submitBtn.innerText = 'ACCESS DASHBOARD';
+                submitBtn.setAttribute('data-i18n', 'btn_login');
+                submitBtn.innerText = tData['btn_login'] || 'ACCESS DASHBOARD';
                 form.action = '/login';
             } else {
                 tabs[1].classList.add('active');
                 signupFields.style.display = 'flex';
-                submitBtn.innerText = 'CREATE ACCOUNT';
+                submitBtn.setAttribute('data-i18n', 'btn_signup');
+                submitBtn.innerText = tData['btn_signup'] || 'CREATE ACCOUNT';
                 form.action = '/signup';
             }
         }
@@ -137,10 +170,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
             document.getElementById('error').style.display = 'block';
-            document.getElementById('error').innerText = urlParams.get('error');
+            document.getElementById('error').setAttribute('data-i18n', 'err_invalid');
         } else if (urlParams.has('success')) {
             document.getElementById('success').style.display = 'block';
-            document.getElementById('success').innerText = urlParams.get('success');
+            document.getElementById('success').setAttribute('data-i18n', 'succ_created');
             switchTab('login');
         }
     </script>
