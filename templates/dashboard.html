@@ -14,13 +14,23 @@
             --accent-emerald: #10b981;
             --accent-blue: #3b82f6;
             --accent-purple: #8b5cf6;
+            --accent-amber: #f59e0b;
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --border-glass: rgba(255, 255, 255, 0.1);
         }
 
+        .light-theme {
+            --bg-deep: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-card: rgba(255, 255, 255, 0.8);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-glass: rgba(0, 0, 0, 0.1);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-primary); display: flex; min-height: 100vh; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-primary); display: flex; min-height: 100vh; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
 
         /* Sidebar Navigation */
         aside {
@@ -77,10 +87,10 @@
         .card-header h3 { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
 
         /* Vitals Section */
-        .vital-row { display: flex; flex-direction: column; gap: 1.2rem; }
-        .vital-item { display: flex; align-items: center; gap: 1rem; }
-        .vital-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .vital-val { font-size: 1.4rem; font-weight: 700; }
+        .vital-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
+        .vital-item { display: flex; align-items: center; gap: 0.8rem; }
+        .vital-icon { min-width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .vital-val { font-size: 1.2rem; font-weight: 700; }
 
         /* Health Radial Hub */
         .health-hub { position: relative; width: 150px; height: 150px; margin: 0 auto; }
@@ -139,10 +149,10 @@
         <nav class="nav-menu">
             <a href="#" class="nav-link active"><i class="fas fa-grid-2"></i> <span data-i18n="dashboard">Dashboard</span></a>
             <a href="#" class="nav-link"><i class="fas fa-chart-line"></i> <span data-i18n="vitals">Analytics</span></a>
-            <a href="#" class="nav-link"><i class="fas fa-seedling"></i> <span data-i18n="top_crops">Farms</span></a>
-            <a href="#" class="nav-link"><i class="fas fa-bell"></i> <span>Notifications</span></a>
+            <a href="#" class="nav-link"><i class="fas fa-seedling"></i> <span data-i18n="farms">Farms</span></a>
+            <a href="#" class="nav-link"><i class="fas fa-bell"></i> <span data-i18n="notifications">Notifications</span></a>
             <a href="#" class="nav-link"><i class="fas fa-cog"></i> <span data-i18n="farm_config">Settings</span></a>
-            <a href="/logout" class="nav-link" style="margin-top: auto; color: #f43f5e;"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+            <a href="/logout" class="nav-link" style="margin-top: auto; color: #f43f5e;"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></a>
         </nav>
         <div class="user-profile">
             <div class="avatar">{{ user.name[0] }}</div>
@@ -157,8 +167,8 @@
         <!-- Top Bar with Selectors -->
         <div class="top-bar">
             <div>
-                <h1 style="font-size: 1.8rem; letter-spacing: -1px;" id="welcome-msg">Welcome, {{ user.name }}</h1>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;" id="date-label">Sustainable Farming Intel Core</p>
+                <h1 style="font-size: 1.8rem; letter-spacing: -1px;"><span data-i18n="welcome">Welcome</span>, {{ user.name }}</h1>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;" id="date-label" data-i18n="sustainable">Sustainable Farming Intel Core</p>
             </div>
             <div class="selector-group">
                 <div class="weather-box" id="weather-widget">
@@ -183,35 +193,50 @@
                     <option value="kn">ಕನ್ನಡ (Kannada)</option>
                     <option value="ur">اردو (Urdu)</option>
                 </select>
+                <button id="theme-toggle" onclick="toggleTheme()" style="background: var(--bg-card); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 0.6rem 1rem; border-radius: 10px; cursor: pointer; backdrop-filter: blur(10px); transition: 0.3s;">
+                    <i class="fas fa-moon"></i>
+                </button>
             </div>
         </div>
 
         <div class="dashboard-grid">
             <!-- Vitals Card -->
-            <div class="card span-3">
+            <div class="card span-5">
                 <div class="card-header"><h3 data-i18n="vitals">Vital Metrics</h3><i class="fas fa-dna"></i></div>
                 <div class="vital-row">
                     <div class="vital-item">
                         <div class="vital-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald);"><i class="fas fa-tint"></i></div>
-                        <div><p style="font-size: 0.7rem; color: var(--text-secondary);" data-i18n="moisture">Soil Moisture</p><p class="vital-val"><span id="val-moisture">--</span>%</p></div>
+                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="moisture">Soil Moisture</p><p class="vital-val"><span id="val-moisture">--</span>%</p></div>
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-amber);"><i class="fas fa-thermometer-half"></i></div>
+                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="soil_temp">Soil Temp</p><p class="vital-val"><span id="val-soil-temp">--</span>°C</p></div>
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;"><i class="fas fa-temperature-high"></i></div>
+                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="air_temp">Air Temp</p><p class="vital-val"><span id="val-air-temp">--</span>°C</p></div>
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);"><i class="fas fa-cloud-rain"></i></div>
+                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="humidity">Air Humidity</p><p class="vital-val"><span id="val-humidity">--</span>%</p></div>
                     </div>
                     <div class="vital-item">
                         <div class="vital-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);"><i class="fas fa-bolt"></i></div>
-                        <div><p style="font-size: 0.7rem; color: var(--text-secondary);" data-i18n="salinity">Salinity (EC)</p><p class="vital-val"><span id="val-salinity">--</span></p></div>
+                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="salinity">Salinity (EC)</p><p class="vital-val"><span id="val-salinity">--</span></p></div>
                     </div>
                     <div class="vital-item">
                         <div class="vital-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple);"><i class="fas fa-leaf"></i></div>
-                        <div><p style="font-size: 0.7rem; color: var(--text-secondary);">N-P-K Ratio</p><p class="vital-val" style="font-size: 1rem;">120:45:60</p></div>
+                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="npk_ratio">N-P-K Ratio</p><p class="vital-val" style="font-size: 1rem;">120:45:60</p></div>
                     </div>
-                    <div class="vital-item">
+                    <div class="vital-item" style="grid-column: span 2;">
                         <div class="vital-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-amber);"><i class="fas fa-vial"></i></div>
-                        <div><p style="font-size: 0.7rem; color: var(--text-secondary);" data-i18n="ph">pH Level</p><p class="vital-val"><span id="val-ph">--</span></p></div>
+                        <div><p style="font-size: 0.65rem; color: var(--text-secondary);" data-i18n="ph">pH Level</p><p class="vital-val"><span id="val-ph">--</span></p></div>
                     </div>
                 </div>
             </div>
 
             <!-- Analytics Chart -->
-            <div class="card span-6">
+            <div class="card span-4">
                 <div class="card-header"><h3 data-i18n="weather">Field Analytics</h3><i class="fas fa-chart-area"></i></div>
                 <div style="height: 380px;"><canvas id="saasChart"></canvas></div>
             </div>
@@ -224,7 +249,7 @@
                     <div class="health-val"><span id="val-health-score">--</span></div>
                 </div>
                 <div style="margin-top: 2rem;">
-                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-align: center;" data-i18n="pump_control">Automation Mode</p>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; text-align: center;" data-i18n="automation_mode">Automation Mode</p>
                     <div class="mode-group">
                         <button class="mode-btn active" id="mode-Manual" onclick="setMode('Manual')" data-i18n="manual_mode">Manual</button>
                         <button class="mode-btn" id="mode-Rule" onclick="setMode('Rule')" data-i18n="rule_mode">Rule</button>
@@ -237,23 +262,23 @@
             <div class="card span-8">
                 <div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr); padding: 0;">
                     <div style="border-right: 1px solid var(--border-glass); padding: 1rem;">
-                        <h3 style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;" data-i18n="pump_control">Pump Visualizer</h3>
+                        <h3 style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;" data-i18n="pump_visualizer">Pump Visualizer</h3>
                         <div class="pump-visual" id="pump-viz">
                             <div class="pump-power"><i class="fas fa-faucet-drip"></i></div>
                             <div style="text-align: center;">
-                                <p id="pump-label" style="font-weight: 800; font-size: 1.5rem;">OFFLINE</p>
-                                <button class="btn-action btn-primary" style="margin-top: 1rem;" onclick="togglePump()" id="pump-btn">MANUAL START</button>
+                                <p id="pump-label" style="font-weight: 800; font-size: 1.5rem;" data-i18n="pump_offline">OFFLINE</p>
+                                <button class="btn-action btn-primary" style="margin-top: 1rem;" onclick="togglePump()" id="pump-btn" data-i18n="manual_mode">MANUAL START</button>
                             </div>
                         </div>
                     </div>
                     <div style="padding: 1rem;">
-                        <h3 style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">Field Vision</h3>
+                        <h3 style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;" data-i18n="field_vision">Field Vision</h3>
                         <div style="border-radius: 12px; overflow: hidden; height: 140px; border: 1px solid var(--border-glass);">
                             <img src="/video_feed" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
                         <div style="margin-top: 1rem; display: flex; justify-content: space-between; font-size: 0.8rem;">
-                            <span>STATUS: <b id="viz-health" style="color: var(--accent-emerald);">HEALTHY</b></span>
-                            <span>PRESENCE: <b id="viz-presence">CROP</b></span>
+                            <span><span data-i18n="status">STATUS</span>: <b id="viz-health" style="color: var(--accent-emerald);">HEALTHY</b></span>
+                            <span><span data-i18n="presence">PRESENCE</span>: <b id="viz-presence">CROP</b></span>
                         </div>
                     </div>
                 </div>
@@ -277,18 +302,37 @@
     <script>
         let saasChart, healthChart;
         let currentLang = 'en';
+        let tData = {};
         let pumpState = "OFF";
         let modeState = "Manual";
 
         async function changeLanguage(lang) {
             currentLang = lang;
             const res = await fetch(`/api/translations/${lang}`);
-            const t = await res.json();
+            tData = await res.json();
+            applyTranslations();
+            updateDashboard(); // Refetch for dynamic translated content if any
+        }
+
+        function applyTranslations() {
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (t[key]) el.innerText = t[key];
+                if (tData[key]) el.innerText = tData[key];
             });
-            updateDashboard(); // Refetch for dynamic translated content if any
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('krishi_theme', isLight ? 'light' : 'dark');
+            const icon = document.querySelector('#theme-toggle i');
+            icon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+            
+            // Adjust Chart Grid Colors smoothly
+            if (saasChart) {
+                saasChart.options.scales.y.grid.color = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+                saasChart.update();
+            }
         }
 
         function initCharts() {
@@ -317,6 +361,9 @@
         async function updateDashboard() {
             const sRes = await fetch('/api/sensors'); const sData = await sRes.json();
             document.getElementById('val-moisture').innerText = sData.soil_moisture;
+            document.getElementById('val-soil-temp').innerText = sData.soil_temperature || "--";
+            document.getElementById('val-air-temp').innerText = sData.air_temperature || "--";
+            document.getElementById('val-humidity').innerText = sData.humidity || "--";
             document.getElementById('val-salinity').innerText = sData.salinity;
             document.getElementById('val-ph').innerText = sData.ph;
             document.getElementById('val-health-score').innerText = sData.health_score || "--";
@@ -353,8 +400,11 @@
             } else {
                 pViz.classList.remove('active-pump');
                 document.getElementById('pump-label').innerText = "SYSTEM STANDBY";
-                document.getElementById('pump-btn').innerText = "START OVERRIDE";
+                document.getElementById('pump-btn').innerText = "MANUAL START";
             }
+            
+            // Re-apply translations for any dynamically rendered template areas if needed
+            if (Object.keys(tData).length > 0) applyTranslations();
 
             // Crops
             const cropBox = document.getElementById('crop-ranks');
@@ -384,6 +434,7 @@
         async function togglePump() { if (modeState !== 'Manual') return; const t = pumpState === 'ON' ? 'OFF' : 'ON'; await fetch('/api/control', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pump:t}) }); updateDashboard(); }
 
         initCharts();
+        if (localStorage.getItem('krishi_theme') === 'light') toggleTheme();
         setInterval(updateDashboard, 3000);
         setInterval(updateHistory, 10000);
         updateDashboard();

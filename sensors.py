@@ -14,6 +14,14 @@ class SoilMoistureSensor:
         # Fluctuates around a mean to simulate real-world data better
         return round(random.uniform(20.0, 90.0), 2)
 
+class SoilTemperatureSensor:
+    def __init__(self, pin="A3"):
+        self.pin = pin
+
+    def read(self):
+        # Mocking soil temperature sensor (e.g. DS18B20 inserted in soil)
+        return round(random.uniform(18.0, 35.0), 1)
+
 class DHTSensor:
     def __init__(self, pin=2):
         self.pin = pin
@@ -52,6 +60,7 @@ class UltrasonicSensor:
 
 # Global instances
 soil_sensor = SoilMoistureSensor()
+soil_temp_sensor = SoilTemperatureSensor()
 dht_sensor = DHTSensor()
 tds_sensor = TDSSensor()
 salinity_sensor = SalinitySensor()
@@ -61,6 +70,7 @@ def get_all_readings():
     temp, hum = dht_sensor.read()
     return {
         "soil_moisture": soil_sensor.read(),
+        "soil_temperature": soil_temp_sensor.read(),
         "air_temperature": temp,
         "humidity": hum,
         "tds": tds_sensor.read(),
