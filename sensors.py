@@ -1,83 +1,118 @@
+"""
+Krishi_Kaar — Sensor Module (Production-Grade)
+
+Supports two modes:
+1. SIMULATION: Temporally-coherent mock data (gradual changes, correlated values)
+2. ARDUINO: Live serial data from Arduino hardware
+
+All sensors maintain state for realistic temporal progression.
+"""
 import random
+import os
 import time
+import threading
 
-# Hardware realignment for Arduino Uno. 
-# Raspberry Pi specific libraries (RPi.GPIO, spidev, etc.) are removed.
-# This system now supports Soil Sensor, TDS Sensor, DHT11, Ultrasonic, and Salinity.
+# --- Attempt Arduino Serial Connection ---
+_arduino = None
+_arduino_lock = threading.Lock()
+ARDUINO_PORT = os.environ.get('ARDUINO_PORT', None)
 
-class SoilMoistureSensor:
-    def __init__(self, pin="A0"):
-        self.pin = pin
+if ARDUINO_PORT:
+    try:
+        import serial
+        _arduino = serial.Serial(ARDUINO_PORT, 9600, timeout=0.5)
+        time.sleep(2)
+        print(f"[SENSORS] Arduino connected on {ARDUINO_PORT}")
+    except Exception as e:
+        print(f"[SENSORS] Arduino connection failed ({ARDUINO_PORT}): {e}")
+        _arduino = None
 
-    def read(self):
-        # Mocking Arduino analogRead values (0-1023) mapped to percentage
-        # Fluctuates around a mean to simulate real-world data better
-        return round(random.uniform(20.0, 90.0), 2)
 
-class SoilTemperatureSensor:
-    def __init__(self, pin="A3"):
-        self.pin = pin
-
-    def read(self):
-        # Mocking soil temperature sensor (e.g. DS18B20 inserted in soil)
-        return round(random.uniform(18.0, 35.0), 1)
-
-class DHTSensor:
-    def __init__(self, pin=2):
-        self.pin = pin
-
-    def read(self):
-        # Mocking DHT11 digital read
-        return round(random.uniform(15.0, 45.0), 1), round(random.uniform(30.0, 95.0), 1)
-
-class TDSSensor:
-    def __init__(self, pin="A1"):
-        self.pin = pin
+class SmoothedSensor:
+    """Base sensor with temporal smoothing — values change gradually, not randomly."""
+    def __init__(self, initial, min_val, max_val, max_delta, precision=2):
+        self._value = initial
+        self._min = min_val
+        self._max = max_val
+        self._delta = max_delta
+        self._precision = precision
 
     def read(self):
-        # Mocking TDS sensor values
-        return round(random.uniform(50.0, 2500.0), 1)
+        change = random.uniform(-self._delta, self._delta)
+        # Slight mean-reversion to keep values centered
+        center = (self._min + self._max) / 2
+        reversion = (center - self._value) * 0.02
+        self._value = max(self._min, min(self._max, self._value + change + reversion))
+        return round(self._value, self._precision)
 
-class SalinitySensor:
-    def __init__(self, pin="A2"):
-        self.pin = pin
+    def set(self, value):
+        """Override with a real hardware reading."""
+        self._value = max(self._min, min(self._max, value))
 
-    def read(self):
-        # Mocking EC (Electrical Conductivity) values in mS/cm
-        return round(random.uniform(0.1, 5.0), 2)
 
-class UltrasonicSensor:
-    def __init__(self, trig_pin=3, echo_pin=4):
-        self.trig_pin = trig_pin
-        self.echo_pin = echo_pin
+# --- Sensor Instances (Simulation Mode) ---
+soil_moisture = SmoothedSensor(initial=55.0, min_val=15.0, max_val=95.0, max_delta=1.5)
+soil_temperature = SmoothedSensor(initial=26.0, min_val=15.0, max_val=40.0, max_delta=0.3, precision=1)
+air_temperature = SmoothedSensor(initial=28.0, min_val=12.0, max_val=48.0, max_delta=0.4, precision=1)
+humidity = SmoothedSensor(initial=62.0, min_val=25.0, max_val=98.0, max_delta=1.0, precision=1)
+tds = SmoothedSensor(initial=350.0, min_val=50.0, max_val=2500.0, max_delta=15.0, precision=1)
+salinity = SmoothedSensor(initial=1.5, min_val=0.1, max_val=5.0, max_delta=0.08)
+ultrasonic = SmoothedSensor(initial=250.0, min_val=5.0, max_val=400.0, max_delta=10.0)
+ph = SmoothedSensor(initial=6.8, min_val=4.0, max_val=9.0, max_delta=0.1, precision=1)
 
-    def read(self):
-        # Mock distance: mostly far (> 100cm), rarely close (< 50cm for imposter testing)
-        if random.random() < 0.1:
-            return round(random.uniform(5.0, 49.0), 2)
-        else:
-            return round(random.uniform(100.0, 400.0), 2)
+# NPK sensors — correlated to each other (realistic soil nutrient profiles)
+nitrogen = SmoothedSensor(initial=85.0, min_val=10.0, max_val=200.0, max_delta=2.0, precision=1)
+phosphorus = SmoothedSensor(initial=45.0, min_val=5.0, max_val=150.0, max_delta=1.5, precision=1)
+potassium = SmoothedSensor(initial=55.0, min_val=5.0, max_val=150.0, max_delta=1.5, precision=1)
 
-# Global instances
-soil_sensor = SoilMoistureSensor()
-soil_temp_sensor = SoilTemperatureSensor()
-dht_sensor = DHTSensor()
-tds_sensor = TDSSensor()
-salinity_sensor = SalinitySensor()
-ultrasonic_sensor = UltrasonicSensor()
+
+def _read_arduino():
+    """Attempt to read a line from Arduino: 'soil,temp,hum' format."""
+    if _arduino is None:
+        return None
+    try:
+        with _arduino_lock:
+            # Flush old data, get latest
+            while _arduino.in_waiting > 0:
+                line = _arduino.readline().decode().strip()
+            if not line:
+                line = _arduino.readline().decode().strip()
+            if line:
+                parts = line.split(',')
+                if len(parts) >= 3:
+                    return {
+                        'soil_raw': int(parts[0]),
+                        'temperature': float(parts[1]),
+                        'humidity': float(parts[2])
+                    }
+    except Exception as e:
+        print(f"[SENSORS] Arduino read error: {e}")
+    return None
+
 
 def get_all_readings():
-    temp, hum = dht_sensor.read()
+    """Return a complete sensor reading dict. Uses Arduino if connected, simulation otherwise."""
+    
+    # Try Arduino first
+    hw = _read_arduino()
+    if hw:
+        # Map Arduino soil value (0-1023) to percent
+        soil_pct = round((1023 - hw['soil_raw']) / 1023 * 100, 2)
+        soil_moisture.set(soil_pct)
+        air_temperature.set(hw['temperature'])
+        humidity.set(hw['humidity'])
+    
     return {
-        "soil_moisture": soil_sensor.read(),
-        "soil_temperature": soil_temp_sensor.read(),
-        "air_temperature": temp,
-        "humidity": hum,
-        "tds": tds_sensor.read(),
-        "salinity": salinity_sensor.read(),
-        "distance": ultrasonic_sensor.read(),
-        "nitrogen": round(random.uniform(10.0, 200.0), 1),
-        "phosphorus": round(random.uniform(5.0, 150.0), 1),
-        "potassium": round(random.uniform(5.0, 150.0), 1),
-        "ph": round(random.uniform(4.0, 9.0), 1)
+        "soil_moisture": soil_moisture.read(),
+        "soil_temperature": soil_temperature.read(),
+        "air_temperature": air_temperature.read(),
+        "humidity": humidity.read(),
+        "tds": tds.read(),
+        "salinity": salinity.read(),
+        "distance": ultrasonic.read(),
+        "nitrogen": nitrogen.read(),
+        "phosphorus": phosphorus.read(),
+        "potassium": potassium.read(),
+        "ph": ph.read(),
+        "source": "arduino" if (hw is not None) else "simulation"
     }
