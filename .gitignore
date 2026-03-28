@@ -1,41 +1,35 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+*.pyc
+*.pyo
+*.pyd
 
-# Virtual Environments
+# Models (generated — do not track large binary files)
+*.pkl
+*.h5
+
+# Database files
+data/krishi_kaar.db
+
+# Environment
+.env
+.venv/
 venv/
 env/
-ENV/
-.env
-.venv
-env.bak/
-venv.bak/
 
-# IDEs
-.vscode/
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
 
-# Project specific (optional, but keep tracked for now as per plan)
-# *.h5
-# *.pkl
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Graphs (generated)
+graph_*.png
+
+# Logs
+*.log
