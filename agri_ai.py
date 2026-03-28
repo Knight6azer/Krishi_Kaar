@@ -1,140 +1,200 @@
+"""
+Krishi_Kaar — Agriculture AI Engine (Production-Grade)
+
+Trains and serves Random Forest models for:
+1. Crop Recommendation (22 crops from N/P/K/Temp/Hum/pH/Rainfall)
+2. Fertilizer Recommendation (from soil + climate features)
+3. Irrigation Prediction (from moisture/temp/humidity)
+
+Thread-safe, cached, with confidence scores and validation.
+"""
 import numpy as np
 import pickle
 import os
-import random
+import threading
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
-MODEL_FILE = 'agri_ai_model.pkl'
+MODEL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'agri_ai_model.pkl')
+
+_models = None
+_models_lock = threading.Lock()
+
 
 def train_agri_models():
     """
-    Trains industrial-grade Random Forest models for:
-    1. Irrigation Needs (Binary)
-    2. Fertilizer Requirements (Multi-class)
-    3. Crop Suitability (Multi-class)
+    Train industrial-grade Random Forest models using real datasets.
+    Returns the trained models dict.
     """
-    X = []
-    y_irrigation = []
-    y_fertilizer = []
-    y_crop = []
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(base_dir, 'data')
     
-    # Dataset generation logic
-    for _ in range(1500):
-        # Features: [N, P, K, Temp, Humidity, pH, Moisture, Salinity]
-        n = random.uniform(10, 200)
-        p = random.uniform(5, 150)
-        k = random.uniform(5, 150)
-        temp = random.uniform(15, 45)
-        hum = random.uniform(20, 95)
-        ph = random.uniform(4, 9.5)
-        moist = random.uniform(0, 100)
-        sal = random.uniform(0.1, 8.0)
-        
-        X.append([n, p, k, temp, hum, ph, moist, sal])
-        
-        # 1. Irrigation Logic (Target: 0=OFF, 1=ON)
-        # Based on moisture threshold and humidity
-        if moist < 30 or (moist < 45 and temp > 35):
-            y_irrigation.append(1)
-        elif moist > 75:
-            y_irrigation.append(0)
-        else:
-            y_irrigation.append(1 if random.random() > 0.6 else 0)
-            
-        # 2. Fertilizer Logic (0: None, 1: NPK, 2: Urea, 3: Potash, 4: DAP)
-        if sal > 6.0: # High salinity - use specific treatment/none
-            y_fertilizer.append(0) 
-        elif n < 40 and p < 40 and k < 40:
-            y_fertilizer.append(1)
-        elif n < 35:
-            y_fertilizer.append(2)
-        elif k < 35:
-            y_fertilizer.append(3)
-        elif p < 35:
-            y_fertilizer.append(4)
-        else:
-            y_fertilizer.append(0)
-            
-        # 3. Crop Suitability (0: Wheat, 1: Rice, 2: Potato, 3: Tomato, 4: Maize)
-        if n > 110 and hum > 75:
-            y_crop.append(1) # Rice
-        elif temp > 32 and moist < 35:
-            y_crop.append(4) # Maize
-        elif ph < 6.0:
-            y_crop.append(2) # Potato
-        elif k > 90 and temp < 30:
-            y_crop.append(3) # Tomato
-        else:
-            y_crop.append(0) # Wheat
+    models = {}
+    
+    # --- 1. Crop Model ---
+    crop_csv = os.path.join(data_dir, 'Crop_recommendation.csv')
+    if os.path.exists(crop_csv):
+        df_crop = pd.read_csv(crop_csv)
+        feature_cols = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+        X_crop = df_crop[feature_cols].values
+        y_crop = df_crop['label'].values
+        rf_crop = RandomForestClassifier(n_estimators=100, max_depth=15, random_state=42, n_jobs=-1)
+        rf_crop.fit(X_crop, y_crop)
+        models['crop'] = rf_crop
+        print(f"[AGRI_AI] Crop model trained on {len(X_crop)} samples, {len(rf_crop.classes_)} classes")
+    else:
+        print(f"[AGRI_AI] WARNING: {crop_csv} not found, using fallback")
+        models['crop'] = RandomForestClassifier(n_estimators=10).fit([[50,50,50,25,60,7,50]], ["Unknown"])
 
-    X = np.array(X)
-    
-    models = {
-        'irrigation': RandomForestClassifier(n_estimators=100, random_state=42).fit(X, y_irrigation),
-        'fertilizer': RandomForestClassifier(n_estimators=100, random_state=42).fit(X, y_fertilizer),
-        'crop': RandomForestClassifier(n_estimators=100, random_state=42).fit(X, y_crop)
-    }
-    
+    # --- 2. Fertilizer Model ---
+    fert_csv = os.path.join(data_dir, 'Fertilizer Prediction.csv')
+    if os.path.exists(fert_csv):
+        df_fert = pd.read_csv(fert_csv)
+        fert_features = ['Temparature', 'Humidity', 'Moisture', 'Nitrogen', 'Potassium', 'Phosphorous']
+        X_fert = df_fert[fert_features].values
+        y_fert = df_fert['Fertilizer Name'].values
+        rf_fert = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+        rf_fert.fit(X_fert, y_fert)
+        models['fertilizer'] = rf_fert
+        print(f"[AGRI_AI] Fertilizer model trained on {len(X_fert)} samples")
+    else:
+        print(f"[AGRI_AI] WARNING: {fert_csv} not found, using fallback")
+        models['fertilizer'] = RandomForestClassifier(n_estimators=10).fit([[25,60,50,50,50,50]], ["Stable"])
+
+    # --- 3. Irrigation Model ---
+    sensor_csv = os.path.join(data_dir, 'sensor_log.csv')
+    if os.path.exists(sensor_csv):
+        df_sensor = pd.read_csv(sensor_csv)
+        if 'moisture_percent' in df_sensor.columns and 'irrigation' in df_sensor.columns:
+            X_irr = df_sensor[['moisture_percent', 'temperature', 'humidity']].values
+            y_irr = df_sensor['irrigation'].values
+            rf_irr = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+            rf_irr.fit(X_irr, y_irr)
+            models['irrigation'] = rf_irr
+            print(f"[AGRI_AI] Irrigation model trained on {len(X_irr)} samples")
+        else:
+            print("[AGRI_AI] WARNING: sensor_log.csv missing expected columns")
+            models['irrigation'] = RandomForestClassifier(n_estimators=10).fit([[50, 25, 60]], ["No Irrigation Needed"])
+    else:
+        print(f"[AGRI_AI] WARNING: {sensor_csv} not found, using fallback")
+        models['irrigation'] = RandomForestClassifier(n_estimators=10).fit([[50, 25, 60]], ["No Irrigation Needed"])
+
     with open(MODEL_FILE, 'wb') as f:
         pickle.dump(models, f)
-    print(f"Industrial Agriculture Models stored at {MODEL_FILE}")
+    print(f"[AGRI_AI] All models saved to {MODEL_FILE}")
+    return models
+
+
+def _load_models():
+    """Thread-safe model loading with caching."""
+    global _models
+    if _models is not None:
+        return _models
+    
+    with _models_lock:
+        if _models is not None:
+            return _models
+        
+        if not os.path.exists(MODEL_FILE):
+            print("[AGRI_AI] Model file not found. Training fresh models...")
+            _models = train_agri_models()
+        else:
+            try:
+                with open(MODEL_FILE, 'rb') as f:
+                    _models = pickle.load(f)
+                # Validate model structure
+                required_keys = ['crop', 'fertilizer', 'irrigation']
+                if not all(k in _models for k in required_keys):
+                    print("[AGRI_AI] Model file incomplete. Retraining...")
+                    _models = train_agri_models()
+            except Exception as e:
+                print(f"[AGRI_AI] Model load error: {e}. Retraining...")
+                _models = train_agri_models()
+        return _models
+
 
 def get_recommendations(readings):
-    if not os.path.exists(MODEL_FILE):
-        train_agri_models()
-        
+    """
+    Generate all AI recommendations from sensor readings.
+    Thread-safe, returns dict with crops, fertilizer, irrigation, health score.
+    """
     try:
-        with open(MODEL_FILE, 'rb') as f:
-            models = pickle.load(f)
-            
-        input_data = np.array([[
-            readings.get('nitrogen', 50),
-            readings.get('phosphorus', 50),
-            readings.get('potassium', 50),
-            readings.get('air_temperature', 25),
-            readings.get('humidity', 60),
-            readings.get('ph', 7.0),
-            readings.get('soil_moisture', 50),
-            readings.get('salinity', 1.0)
-        ]])
+        models = _load_models()
         
-        # Predictions
-        irr_pred = models['irrigation'].predict(input_data)[0]
-        fert_pred = models['fertilizer'].predict(input_data)[0]
+        n = float(readings.get('nitrogen', 50))
+        p = float(readings.get('phosphorus', 50))
+        k = float(readings.get('potassium', 50))
+        t = float(readings.get('air_temperature', 25))
+        h = float(readings.get('humidity', 60))
+        ph_val = float(readings.get('ph', 7.0))
+        m = float(readings.get('soil_moisture', 50))
+        sal = float(readings.get('salinity', 1.0))
         
-        # Top 3 Crops based on probabilities
-        crop_probs = models['crop'].predict_proba(input_data)[0]
-        crop_indices = np.argsort(crop_probs)[-3:][::-1]
+        # 1. Irrigation Prediction
+        irr_pred = models['irrigation'].predict([[m, t, h]])[0]
+        irrigation_on = 1 if "Required" in str(irr_pred) else 0
+        irr_status = "ON" if irrigation_on else "OFF"
         
-        crop_labels = {0: "Wheat", 1: "Rice", 2: "Potato", 3: "Tomato", 4: "Maize"}
-        top_crops = [crop_labels.get(idx, "Unknown") for idx in crop_indices]
+        # 2. Fertilizer Prediction
+        fert_pred = str(models['fertilizer'].predict([[t, h, m, n, k, p]])[0])
         
-        fert_labels = {0: "Safe Balance", 1: "Apply NPK 19:19:19", 2: "Apply Urea", 3: "Apply Potash", 4: "Apply DAP"}
-        irr_labels = {0: "OFF", 1: "ON"}
+        # 3. Crop Recommendation with confidence
+        crop_probs = models['crop'].predict_proba([[n, p, k, t, h, ph_val, m]])[0]
+        top_indices = np.argsort(crop_probs)[-3:][::-1]
+        top_crops = []
+        for idx in top_indices:
+            crop_name = models['crop'].classes_[idx]
+            confidence = round(float(crop_probs[idx]) * 100, 1)
+            top_crops.append({"name": str(crop_name), "confidence": confidence})
         
-        # Soil Health Score Calculation (Simplified logic)
-        # Ideal: pH 6-7, Salinity < 2, Moisture 40-70
-        ph = readings.get('ph', 7.0)
-        sal = readings.get('salinity', 1.0)
-        moist = readings.get('soil_moisture', 50)
+        # Extract just names for backward compatibility
+        top_crop_names = [c["name"] for c in top_crops]
         
-        score = 100
-        score -= abs(ph - 6.5) * 10
-        score -= max(0, sal - 2) * 15
-        if moist < 20 or moist > 80: score -= 20
+        # 4. Health Score (0-100)
+        score = 100.0
+        score -= abs(ph_val - 6.5) * 8
+        score -= max(0, sal - 2) * 12
+        if m < 20: score -= (20 - m)
+        if m > 80: score -= (m - 80)
+        if t > 40: score -= (t - 40) * 3
+        if t < 10: score -= (10 - t) * 3
         health_score = max(5, min(100, int(score)))
 
         return {
-            "top_crops": top_crops,
-            "crop": top_crops[0], # Primary one
-            "fertilizer": fert_labels.get(fert_pred, "Stable"),
-            "irrigation": irr_labels.get(irr_pred, "OFF"),
-            "irrigation_code": int(irr_pred),
+            "top_crops": top_crop_names,
+            "top_crops_detailed": top_crops,
+            "crop": top_crop_names[0] if top_crop_names else "Unknown",
+            "fertilizer": fert_pred,
+            "irrigation": irr_status,
+            "irrigation_code": irrigation_on,
+            "irrigation_label": str(irr_pred),
             "health_score": health_score
         }
     except Exception as e:
-        print(f"Inference error: {e}")
-        return {"top_crops": ["N/A"], "crop": "N/A", "fertilizer": "Stable", "irrigation": "OFF", "irrigation_code": 0, "health_score": 50}
+        print(f"[AGRI_AI] Inference error: {e}")
+        return {
+            "top_crops": ["N/A"], 
+            "top_crops_detailed": [{"name": "N/A", "confidence": 0}],
+            "crop": "N/A", 
+            "fertilizer": "Stable", 
+            "irrigation": "OFF", 
+            "irrigation_code": 0, 
+            "irrigation_label": "Error",
+            "health_score": 50
+        }
+
 
 if __name__ == "__main__":
+    print("[AGRI_AI] Training models from scratch...")
     train_agri_models()
+    
+    # Test inference
+    test_readings = {
+        "nitrogen": 90, "phosphorus": 42, "potassium": 43,
+        "air_temperature": 25, "humidity": 80, "ph": 6.5,
+        "soil_moisture": 45, "salinity": 1.2
+    }
+    result = get_recommendations(test_readings)
+    print(f"\nTest Results:")
+    for k, v in result.items():
+        print(f"  {k}: {v}")
