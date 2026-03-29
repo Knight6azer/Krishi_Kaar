@@ -150,7 +150,15 @@ system_state = {
     "pump": "OFF",
     "farm_area": 5.0,
     "crop_type": "Wheat",
-    "soil_type": "Loamy"
+    "soil_type": "Loamy",
+    "rule_thresholds": dict(Config.DEFAULT_RULE_THRESHOLDS)
+}
+
+# Location state (updated by frontend geolocation or manual input)
+location_state = {
+    "lat": Config.WEATHER_LAT,
+    "lon": Config.WEATHER_LON,
+    "city": Config.WEATHER_CITY
 }
 
 # Global data stores (updated by background threads)
@@ -164,11 +172,11 @@ latest_ai_recommendations = {
     "irrigation_code": 0,
     "health_score": 50
 }
-latest_crop_status = {"label": "Initializing...", "confidence": 0}
-latest_presence_status = {"label": "Initializing...", "confidence": 0}
+latest_crop_status = {"label": "Initializing...", "confidence": 0, "quality": "Initializing"}
+latest_presence_status = {"label": "Initializing...", "confidence": 0, "quality": "Initializing"}
 
 # Weather cache
-_weather_cache = {"data": None, "expires": 0}
+_weather_cache = {"data": None, "expires": 0, "location_key": ""}
 
 
 # ============================================================
@@ -230,11 +238,24 @@ def sensor_loop():
             if system_state["mode"] == "Smart":
                 system_state["pump"] = ai_output["irrigation"]
             elif system_state["mode"] == "Rule":
+                thresholds = system_state.get("rule_thresholds", Config.DEFAULT_RULE_THRESHOLDS)
                 moisture = readings.get('soil_moisture', 50)
-                if moisture < 30:
+                temp = readings.get('air_temperature', 25)
+                hum = readings.get('humidity', 50)
+                
+                # Primary rule: moisture-based pump control
+                if moisture < thresholds.get('moisture_low', 30):
                     system_state["pump"] = "ON"
-                elif moisture > 60:
+                elif moisture > thresholds.get('moisture_high', 60):
                     system_state["pump"] = "OFF"
+                
+                # Secondary rule: override ON if temp too high and moisture not saturated
+                if temp > thresholds.get('temp_max', 40) and moisture < thresholds.get('moisture_high', 60):
+                    system_state["pump"] = "ON"
+                
+                # Secondary rule: override ON if humidity too low
+                if hum < thresholds.get('humidity_min', 30) and moisture < thresholds.get('moisture_high', 60):
+                    system_state["pump"] = "ON"
             
             # Enrich readings
             readings["pump_status"] = system_state["pump"]
@@ -323,12 +344,21 @@ def crop_inference_loop():
 # ============================================================
 # Weather
 # ============================================================
-def get_weather():
-    """Get weather data (cached). Uses OWM API if key provided, otherwise realistic stub."""
+def get_weather(lat=None, lon=None, city=None):
+    """Get weather data (cached). Uses OWM API if key provided, otherwise realistic stub.
+    Accepts lat/lon for geolocation or city name for manual input."""
     global _weather_cache
     now = time.time()
     
-    if _weather_cache["data"] and now < _weather_cache["expires"]:
+    # Use provided location or fall back to stored state
+    use_lat = lat or location_state["lat"]
+    use_lon = lon or location_state["lon"]
+    use_city = city or location_state["city"]
+    location_key = f"{use_lat},{use_lon},{use_city}"
+    
+    # Return cache if location hasn't changed and cache is fresh
+    if (_weather_cache["data"] and now < _weather_cache["expires"] 
+            and _weather_cache.get("location_key") == location_key):
         return _weather_cache["data"]
     
     weather = None
@@ -336,18 +366,27 @@ def get_weather():
     if Config.WEATHER_API_KEY:
         try:
             import requests
-            url = f"https://api.openweathermap.org/data/2.5/weather?q={Config.WEATHER_CITY}&appid={Config.WEATHER_API_KEY}&units=metric"
+            # Prefer lat/lon if available (more accurate), fall back to city name
+            if use_lat and use_lon and (lat is not None or lon is not None or use_lat != Config.WEATHER_LAT):
+                url = f"https://api.openweathermap.org/data/2.5/weather?lat={use_lat}&lon={use_lon}&appid={Config.WEATHER_API_KEY}&units=metric"
+            else:
+                url = f"https://api.openweathermap.org/data/2.5/weather?q={use_city}&appid={Config.WEATHER_API_KEY}&units=metric"
             resp = requests.get(url, timeout=5)
             if resp.status_code == 200:
                 d = resp.json()
+                resolved_city = d.get("name", use_city)
                 weather = {
                     "temp": round(d["main"]["temp"], 1),
                     "condition": d["weather"][0]["description"].title(),
                     "humidity": d["main"]["humidity"],
                     "wind": round(d.get("wind", {}).get("speed", 0), 1),
-                    "city": Config.WEATHER_CITY,
+                    "city": resolved_city,
+                    "lat": d["coord"]["lat"],
+                    "lon": d["coord"]["lon"],
                     "source": "openweathermap"
                 }
+                # Update location state with resolved city name
+                location_state["city"] = resolved_city
         except Exception as e:
             print(f"[WEATHER] API error: {e}")
     
@@ -369,11 +408,13 @@ def get_weather():
             "condition": condition,
             "humidity": round(hum, 1),
             "wind": round(12 + (temp - 25) * 0.5, 1),
-            "city": Config.WEATHER_CITY,
+            "city": use_city,
+            "lat": use_lat,
+            "lon": use_lon,
             "source": "simulated"
         }
     
-    _weather_cache = {"data": weather, "expires": now + Config.WEATHER_CACHE_SEC}
+    _weather_cache = {"data": weather, "expires": now + Config.WEATHER_CACHE_SEC, "location_key": location_key}
     return weather
 
 
@@ -472,9 +513,6 @@ def logout():
     return redirect(url_for('auth_page'))
 
 
-# ============================================================
-# Routes — Pages
-# ============================================================
 @app.route('/')
 @login_required
 def index():
@@ -504,6 +542,7 @@ def api_recommendations():
     data.update({
         "pump_status": system_state["pump"],
         "mode": system_state["mode"],
+        "rule_thresholds": system_state.get("rule_thresholds", Config.DEFAULT_RULE_THRESHOLDS),
         "user_exp": current_user.experience,
         "db_type": db_type(),
         "db_connected": MONGO_ACTIVE or SQLITE_ACTIVE
@@ -513,15 +552,42 @@ def api_recommendations():
 
 @app.route('/api/vision')
 def api_vision():
+    crop = latest_crop_status.copy()
+    presence = latest_presence_status.copy()
+    # Remove heavy quality_details from API response to keep it lightweight
+    crop.pop('quality_details', None)
+    presence.pop('quality_details', None)
     return jsonify({
-        "crop_status": latest_crop_status,
-        "presence_status": latest_presence_status
+        "crop_status": crop,
+        "presence_status": presence
     })
 
 
 @app.route('/api/weather')
 def api_weather():
-    return jsonify(get_weather())
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    city = request.args.get('city')
+    return jsonify(get_weather(lat=lat, lon=lon, city=city))
+
+
+@app.route('/api/location', methods=['POST'])
+def api_location():
+    """Update server-side location from browser geolocation or manual input."""
+    global location_state
+    req = request.json or {}
+    
+    if 'lat' in req and 'lon' in req:
+        location_state['lat'] = float(req['lat'])
+        location_state['lon'] = float(req['lon'])
+        # Invalidate weather cache to force re-fetch with new coords
+        _weather_cache['expires'] = 0
+    
+    if 'city' in req:
+        location_state['city'] = req['city']
+        _weather_cache['expires'] = 0
+    
+    return jsonify({"status": "success", "location": location_state})
 
 
 @app.route('/api/translations/<lang>')
@@ -543,6 +609,18 @@ def api_control():
             system_state["pump"] = req["pump"]
         else:
             return jsonify({"status": "error", "message": "Pump control only available in Manual mode"}), 400
+    
+    # Rule mode threshold updates
+    if "rule_thresholds" in req and isinstance(req["rule_thresholds"], dict):
+        valid_keys = {"moisture_low", "moisture_high", "temp_max", "humidity_min"}
+        thresholds = system_state.get("rule_thresholds", dict(Config.DEFAULT_RULE_THRESHOLDS))
+        for k, v in req["rule_thresholds"].items():
+            if k in valid_keys:
+                try:
+                    thresholds[k] = float(v)
+                except (ValueError, TypeError):
+                    pass
+        system_state["rule_thresholds"] = thresholds
     
     return jsonify({"status": "success", "state": system_state})
 
