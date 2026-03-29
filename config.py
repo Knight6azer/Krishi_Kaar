@@ -33,7 +33,23 @@ class Config:
     # --- Weather ---
     WEATHER_API_KEY = os.environ.get('OWM_API_KEY', None)
     WEATHER_CITY = os.environ.get('WEATHER_CITY', 'Bangalore')
+    WEATHER_LAT = float(os.environ.get('WEATHER_LAT', '12.9716'))
+    WEATHER_LON = float(os.environ.get('WEATHER_LON', '77.5946'))
     WEATHER_CACHE_SEC = 600  # 10 minute cache
+    
+    # --- Vision ---
+    VISION_CONFIDENCE_THRESHOLD = 0.55  # Below this → "Uncertain"
+    VISION_FRAME_VARIANCE_MIN = 15.0    # Below this → "Camera Blocked"
+    VISION_BRIGHTNESS_MIN = 10          # Below this → "Too Dark"
+    VISION_BRIGHTNESS_MAX = 245         # Above this → "Overexposed"
+    
+    # --- Rule Mode Defaults ---
+    DEFAULT_RULE_THRESHOLDS = {
+        "moisture_low": 30,
+        "moisture_high": 60,
+        "temp_max": 40,
+        "humidity_min": 30
+    }
     
     # --- Server ---
     HOST = os.environ.get('HOST', '0.0.0.0')
