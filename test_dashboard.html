@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krishi_Kaar | Smart Agriculture Platform</title>
+    <meta name="description" content="AI-powered precision agriculture dashboard with real-time sensor monitoring, crop recommendations, and irrigation automation.">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-deep: #020617;
+            --bg-sidebar: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.5);
+            --accent-emerald: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-glass: rgba(255, 255, 255, 0.1);
+        }
+
+        .light-theme {
+            --bg-deep: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-card: rgba(255, 255, 255, 0.8);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-glass: rgba(0, 0, 0, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-primary); display: flex; min-height: 100vh; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+
+        /* Sidebar */
+        aside {
+            width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border-glass);
+            display: flex; flex-direction: column; padding: 1.5rem 1.2rem; position: fixed; height: 100vh; z-index: 100;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 2.5rem; }
+        .nav-brand i { font-size: 2rem; color: var(--accent-emerald); }
+        .nav-brand h2 { font-size: 1.3rem; letter-spacing: -0.5px; }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
+        .nav-link {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1rem;
+            color: var(--text-secondary); text-decoration: none; border-radius: 10px;
+            transition: 0.2s; font-weight: 500; font-size: 0.9rem; cursor: pointer;
+        }
+        .nav-link.active, .nav-link:hover { background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); }
+        .nav-link i { width: 18px; text-align: center; }
+
+        .user-profile {
+            margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-glass);
+            display: flex; align-items: center; gap: 0.8rem;
+        }
+        .avatar {
+            width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--accent-emerald), var(--accent-blue));
+            display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;
+        }
+        .badge { font-size: 0.65rem; background: var(--accent-emerald); color: #fff; padding: 0.15rem 0.5rem; border-radius: 20px; display: inline-block; }
+        .user-info h3 { font-size: 0.85rem; }
+
+        /* Main */
+        main { margin-left: 260px; flex: 1; padding: 2rem; max-width: 1400px; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .selector-group { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+        select, .theme-btn {
+            background: var(--bg-card); border: 1px solid var(--border-glass); color: var(--text-primary);
+            padding: 0.5rem 0.8rem; border-radius: 8px; outline: none; backdrop-filter: blur(10px); cursor: pointer; font-size: 0.85rem;
+        }
+        /* Fix dropdown options for both themes */
+        select option {
+            background: #1e293b; color: #f8fafc;
+        }
+        .light-theme select option {
+            background: #ffffff; color: #0f172a;
+        }
+        .settings-form select option {
+            background: #1e293b; color: #f8fafc;
+        }
+        .light-theme .settings-form select option {
+            background: #ffffff; color: #0f172a;
+        }
+
+        /* Grid */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.2rem; }
+        .card {
+            background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border-glass);
+            backdrop-filter: blur(15px); padding: 1.3rem; transition: 0.3s;
+        }
+        .card:hover { transform: translateY(-3px); border-color: rgba(16, 185, 129, 0.2); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+
+        .span-3 { grid-column: span 3; } .span-4 { grid-column: span 4; }
+        .span-5 { grid-column: span 5; } .span-6 { grid-column: span 6; }
+        .span-7 { grid-column: span 7; } .span-8 { grid-column: span 8; }
+
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
+        .card-header h3 { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+        /* Vitals */
+        .vital-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .vital-item { display: flex; align-items: center; gap: 0.7rem; }
+        .vital-icon { min-width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+        .vital-val { font-size: 1.1rem; font-weight: 700; }
+        .vital-label { font-size: 0.65rem; color: var(--text-secondary); }
+
+        /* Health */
+        .health-hub { position: relative; width: 140px; height: 140px; margin: 0 auto; }
+        .health-val { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.8rem; font-weight: 800; }
+
+        /* Crops */
+        .crop-list { display: flex; flex-direction: column; gap: 0.6rem; }
+        .crop-item {
+            background: rgba(255,255,255,0.03); padding: 0.8rem; border-radius: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .crop-rank { width: 22px; height: 22px; background: var(--accent-emerald); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #fff; }
+
+        /* Weather */
+        .weather-box {
+            display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent);
+            border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.15); position: relative;
+        }
+        .location-display { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; transition: 0.2s; }
+        .location-display:hover { color: var(--accent-blue); }
+        .location-display i.fa-map-marker-alt { font-size: 0.7rem; color: var(--accent-red); }
+        .location-edit { display: none; align-items: center; gap: 0.4rem; }
+        .location-edit input {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--border-glass); color: var(--text-primary);
+            padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; width: 110px; outline: none;
+        }
+        .location-edit input:focus { border-color: var(--accent-blue); }
+        .location-edit button {
+            background: var(--accent-blue); color: white; border: none; border-radius: 6px;
+            padding: 0.2rem 0.5rem; font-size: 0.65rem; cursor: pointer; font-weight: 600;
+        }
+        .geo-btn {
+            background: none; border: none; color: var(--accent-blue); cursor: pointer; font-size: 0.8rem;
+            padding: 0.2rem; border-radius: 4px; transition: 0.2s;
+        }
+        .geo-btn:hover { color: var(--accent-emerald); transform: scale(1.1); }
+        .geo-btn.detecting { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Mode */
+        .mode-group { display: flex; gap: 0.4rem; background: rgba(0,0,0,0.2); padding: 0.3rem; border-radius: 10px; }
+        .mode-btn { flex: 1; border: none; background: transparent; color: var(--text-secondary); padding: 0.5rem; border-radius: 7px; cursor: pointer; font-weight: 600; font-size: 0.75rem; transition: 0.2s; }
+        .mode-btn.active { background: var(--accent-emerald); color: white; }
+
+        /* Rule Mode Threshold Panel */
+        .rule-thresholds-panel {
+            margin-top: 1rem; padding: 0.8rem; background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.15); border-radius: 12px;
+            display: none; animation: fadeSlideIn 0.3s ease;
+        }
+        .rule-thresholds-panel.visible { display: block; }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .threshold-item { margin-bottom: 0.6rem; }
+        .threshold-item:last-child { margin-bottom: 0; }
+        .threshold-label {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.3rem;
+        }
+        .threshold-label .threshold-val { font-weight: 700; color: var(--text-primary); font-size: 0.75rem; }
+        .threshold-label .threshold-val.triggered { color: var(--accent-red); }
+        .threshold-slider {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+            border-radius: 4px; background: rgba(255,255,255,0.1); outline: none; transition: 0.2s;
+        }
+        .threshold-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
+            border-radius: 50%; background: var(--accent-blue); cursor: pointer;
+            box-shadow: 0 0 6px rgba(59, 130, 246, 0.4); transition: 0.15s;
+        }
+        .threshold-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        .threshold-slider::-moz-range-thumb {
+            width: 14px; height: 14px; border-radius: 50%; background: var(--accent-blue);
+            cursor: pointer; border: none;
+        }
+        .threshold-active-rules {
+            margin-top: 0.5rem; padding: 0.4rem 0.6rem; border-radius: 8px;
+            background: rgba(16, 185, 129, 0.08); font-size: 0.65rem;
+            color: var(--text-secondary); border-left: 2px solid var(--accent-emerald);
+        }
+        .threshold-active-rules .rule-trigger {
+            color: var(--accent-amber); font-weight: 600;
+        }
+
+        /* Vision Quality */
+        .vision-quality-badge {
+            display: inline-block; padding: 0.15rem 0.5rem; border-radius: 10px;
+            font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+        }
+        .vq-good { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+        .vq-warning { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .vq-error { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+        .confidence-text { font-size: 0.65rem; color: var(--text-secondary); font-weight: 500; }
+
+        /* Pump */
+        .pump-visual { display: flex; align-items: center; justify-content: center; gap: 1.5rem; padding: 0.8rem; }
+        .pump-power { width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--border-glass); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: var(--text-secondary); transition: 0.5s; }
+        .active-pump .pump-power { color: var(--accent-emerald); border-color: var(--accent-emerald); box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .btn-action { padding: 0.6rem 1.2rem; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.8rem; }
+        .btn-primary { background: var(--accent-emerald); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Water Quality Badge */
+        .water-badge { padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .water-safe { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+        .water-moderate { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .water-unsafe { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+        /* DB Status Indicator */
+        .db-indicator { display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; color: var(--text-secondary); }
+        .db-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .db-dot.online { background: var(--accent-emerald); }
+        .db-dot.offline { background: var(--accent-amber); }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem; border-radius: 12px;
+            font-weight: 600; font-size: 0.85rem; z-index: 1000; display: none;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+            animation: slideIn 0.3s ease;
+        }
+        .toast-danger { background: rgba(239, 68, 68, 0.9); color: #fff; }
+        .toast-warning { background: rgba(245, 158, 11, 0.9); color: #fff; }
+        .toast-success { background: rgba(16, 185, 129, 0.9); color: #fff; }
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Sections (nav pages) */
+        .section-page { display: none; }
+        .section-page.active { display: block; }
+
+        /* Settings form */
+        .settings-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+        .settings-form label { font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.3rem; }
+        .settings-form input, .settings-form select {
+            width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-glass);
+            background: rgba(255,255,255,0.05); color: var(--text-primary); font-size: 0.85rem;
+        }
+
+        /* Notifications list */
+        .notif-list { display: flex; flex-direction: column; gap: 0.6rem; max-height: 500px; overflow-y: auto; }
+        .notif-item { padding: 0.8rem; border-radius: 10px; background: rgba(255,255,255,0.03); border-left: 3px solid var(--accent-emerald); font-size: 0.85rem; }
+        .notif-item.warning { border-left-color: var(--accent-amber); }
+        .notif-item.danger { border-left-color: var(--accent-red); }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid { grid-template-columns: repeat(6, 1fr); }
+            .span-3, .span-4, .span-5 { grid-column: span 3; }
+            .span-7, .span-8 { grid-column: span 6; }
+        }
+        @media (max-width: 1024px) {
+            aside { width: 70px; padding: 1.5rem 0.4rem; }
+            .nav-brand h2, .nav-link span, .user-info { display: none; }
+            main { margin-left: 70px; }
+        }
+        @media (max-width: 768px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .span-3, .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast-alert"></div>
+
+    <!-- Sidebar -->
+    <aside>
+        <div class="nav-brand">
+            <i class="fas fa-leaf"></i>
+            <h2>Krishi_Kaar</h2>
+        </div>
+        <nav class="nav-menu">
+            <a class="nav-link active" onclick="switchSection('dashboard')" id="nav-dashboard"><i class="fas fa-th-large"></i> <span data-i18n="dashboard">Dashboard</span></a>
+            <a class="nav-link" onclick="switchSection('analytics')" id="nav-analytics"><i class="fas fa-chart-line"></i> <span data-i18n="vitals">Analytics</span></a>
+            <a class="nav-link" onclick="switchSection('notifications')" id="nav-notifications"><i class="fas fa-bell"></i> <span data-i18n="notifications">Notifications</span></a>
+            <a class="nav-link" onclick="switchSection('settings')" id="nav-settings"><i class="fas fa-cog"></i> <span data-i18n="farm_config">Settings</span></a>
+            <a href="/logout" class="nav-link" style="margin-top: auto; color: #f43f5e;"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></a>
+        </nav>
+        <div class="user-profile">
+            <div class="avatar">T</div>
+            <div class="user-info">
+                <h3>TestUser</h3>
+                <span class="badge"></span>
+            </div>
+        </div>
+    </aside>
+
+    <main>
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div>
+                <h1 style="font-size: 1.6rem; letter-spacing: -0.5px;"><span data-i18n="welcome">Welcome</span>, TestUser</h1>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.3rem;">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;" data-i18n="sustainable">Sustainable Farming Intel Core</p>
+                    <div class="db-indicator" id="db-status">
+                        <span class="db-dot"></span>
+                        <span>Connecting...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="selector-group">
+                <div class="weather-box" id="weather-widget">
+                    <i class="fas fa-cloud-sun" style="font-size: 1.2rem; color: var(--accent-amber);"></i>
+                    <div>
+                        <b id="weather-temp">--°C</b>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary);" id="weather-desc">Loading...</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.3rem; margin-left: 0.3rem;">
+                        <div class="location-display" id="location-display" onclick="startLocationEdit()" title="Click to change location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span id="weather-city" style="font-size: 0.7rem;">Detecting...</span>
+                        </div>
+                        <div class="location-edit" id="location-edit">
+                            <input type="text" id="location-input" placeholder="City name" onkeydown="if(event.key==='Enter') saveLocationManual()">
+                            <button onclick="saveLocationManual()">Set</button>
+                            <button onclick="cancelLocationEdit()" style="background: var(--accent-red);">✕</button>
+                        </div>
+                        <button class="geo-btn" id="geo-detect-btn" onclick="detectGeolocation()" title="Auto-detect location">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                    </div>
+                </div>
+                <select id="lang-selector" onchange="changeLanguage(this.value)">
+                    <option value="en">English</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="mr">मराठी</option>
+                    <option value="gu">ગુજરાતી</option>
+                    <option value="ta">தமிழ்</option>
+                    <option value="te">తెలుగు</option>
+                    <option value="kn">ಕನ್ನಡ</option>
+                    <option value="ur">اردو</option>
+                </select>
+                <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============ DASHBOARD SECTION ============ -->
+        <div class="section-page active" id="section-dashboard">
+            <div class="dashboard-grid">
+                <!-- Vitals Card -->
+                <div class="card span-5">
+                    <div class="card-header"><h3 data-i18n="vitals">Vital Metrics</h3><i class="fas fa-dna" style="color: var(--accent-emerald);"></i></div>
+                    <div class="vital-row">
+                        <div class="vital-item">
+                            <div class="vital-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald);"><i class="fas fa-tint"></i></div>
+                            <div><p class="vital-label" data-i18n="moisture">Soil Moisture</p><p class="vital-val"><span id="val-moisture">--</span>%</p></div>
+                        </div>
+                        <div class="vital-item">
+                            <div class="vital-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-amber);"><i class="fas fa-thermometer-half"></i></div>
+                            <div><p class="vital-label" data-i18n="soil_temp">Soil Temp</p><p class="vital-val"><span id="val-soil-temp">--</span>°C</p></div>
+                        </div>
+                        <div class="vital-item">
+                            <div class="vital-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-red);"><i class="fas fa-temperature-high"></i></div>
+                            <div><p class="vital-label" data-i18n="air_temp">Air Temp</p><p class="vital-val"><span id="val-air-temp">--</span>°C</p></div>
+                        </div>
+                        <div class="vital-item">
+                            <div class="vital-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);"><i class="fas fa-cloud-rain"></i></div>
+                            <div><p class="vital-label" data-i18n="humidity">Humidity</p><p class="vital-val"><span id="val-humidity">--</span>%</p></div>
+                        </div>
+                        <div class="vital-item">
+                            <div class="vital-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);"><i class="fas fa-bolt"></i></div>
+                            <div><p class="vital-label" data-i18n="salinity">Salinity (EC)</p><p class="vital-val"><span id="val-salinity">--</span> <span class="water-badge" id="water-badge">--</span></p></div>
+                        </div>
+                        <div class="vital-item">
+                            <div class="vital-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple);"><i class="fas fa-leaf"></i></div>
+                            <div><p class="vital-label" data-i18n="npk_ratio">N-P-K Ratio</p><p class="vital-val" style="font-size: 1rem;" id="val-npk">--:--:--</p></div>
+                        </div>
+                        <div class="vital-item" style="grid-column: span 2;">
+                            <div class="vital-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-amber);"><i class="fas fa-vial"></i></div>
+                            <div><p class="vital-label" data-i18n="ph">pH Level</p><p class="vital-val"><span id="val-ph">--</span></p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Chart -->
+                <div class="card span-4">
+                    <div class="card-header"><h3 data-i18n="weather">Field Analytics</h3><i class="fas fa-chart-area" style="color: var(--accent-blue);"></i></div>
+                    <div style="height: 380px;"><canvas id="saasChart"></canvas></div>
+                </div>
+
+                <!-- Health & Mode -->
+                <div class="card span-3">
+                    <div class="card-header"><h3 data-i18n="health_score">Soil Health</h3><i class="fas fa-heart" style="color: var(--accent-red);"></i></div>
+                    <div class="health-hub">
+                        <canvas id="healthRadial"></canvas>
+                        <div class="health-val"><span id="val-health-score">--</span></div>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.8rem; text-align: center;" data-i18n="automation_mode">Automation Mode</p>
+                        <div class="mode-group">
+                            <button class="mode-btn active" id="mode-Manual" onclick="setMode('Manual')" data-i18n="manual_mode">Manual</button>
+                            <button class="mode-btn" id="mode-Rule" onclick="setMode('Rule')" data-i18n="rule_mode">Rule</button>
+                            <button class="mode-btn" id="mode-Smart" onclick="setMode('Smart')" data-i18n="smart_mode">Smart</button>
+                        </div>
+                    </div>
+                    <!-- Rule Mode Threshold Panel -->
+                    <div class="rule-thresholds-panel" id="rule-thresholds-panel">
+                        <p style="font-size: 0.7rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 0.6rem;"><i class="fas fa-sliders-h" style="margin-right: 0.3rem;"></i>Threshold Rules</p>
+                        <div class="threshold-item">
+                            <div class="threshold-label">
+                                <span><i class="fas fa-tint" style="color: var(--accent-emerald); margin-right: 0.3rem;"></i>Moisture ON (Low)</span>
+                                <span class="threshold-val" id="thresh-mlow-val">30%</span>
+                            </div>
+                            <input type="range" class="threshold-slider" id="thresh-moisture-low" min="5" max="60" value="30" onchange="updateThreshold('moisture_low', this.value)" oninput="document.getElementById('thresh-mlow-val').innerText = this.value + '%'">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">
+                                <span><i class="fas fa-tint-slash" style="color: var(--accent-blue); margin-right: 0.3rem;"></i>Moisture OFF (High)</span>
+                                <span class="threshold-val" id="thresh-mhigh-val">60%</span>
+                            </div>
+                            <input type="range" class="threshold-slider" id="thresh-moisture-high" min="40" max="95" value="60" onchange="updateThreshold('moisture_high', this.value)" oninput="document.getElementById('thresh-mhigh-val').innerText = this.value + '%'">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">
+                                <span><i class="fas fa-temperature-high" style="color: var(--accent-red); margin-right: 0.3rem;"></i>Max Temp Alert</span>
+                                <span class="threshold-val" id="thresh-tmax-val">40°C</span>
+                            </div>
+                            <input type="range" class="threshold-slider" id="thresh-temp-max" min="25" max="55" value="40" onchange="updateThreshold('temp_max', this.value)" oninput="document.getElementById('thresh-tmax-val').innerText = this.value + '°C'">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">
+                                <span><i class="fas fa-cloud-rain" style="color: var(--accent-purple); margin-right: 0.3rem;"></i>Min Humidity Alert</span>
+                                <span class="threshold-val" id="thresh-hmin-val">30%</span>
+                            </div>
+                            <input type="range" class="threshold-slider" id="thresh-humidity-min" min="10" max="70" value="30" onchange="updateThreshold('humidity_min', this.value)" oninput="document.getElementById('thresh-hmin-val').innerText = this.value + '%'">
+                        </div>
+                        <div class="threshold-active-rules" id="threshold-active-rules">
+                            <i class="fas fa-info-circle" style="margin-right: 0.3rem;"></i> Pump activates when moisture drops below ON threshold or temp/humidity triggers fire.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pump & Vision -->
+                <div class="card span-8">
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; padding: 0;">
+                        <div style="border-right: 1px solid var(--border-glass); padding: 1rem;">
+                            <h3 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 1px;" data-i18n="pump_visualizer">Pump Visualizer</h3>
+                            <div class="pump-visual" id="pump-viz">
+                                <div class="pump-power"><i class="fas fa-faucet-drip"></i></div>
+                                <div style="text-align: center;">
+                                    <p id="pump-label" style="font-weight: 800; font-size: 1.3rem;" data-i18n="pump_standby">STANDBY</p>
+                                    <p id="pump-mode-label" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.3rem;">Manual Mode</p>
+                                    <button class="btn-action btn-primary" style="margin-top: 0.8rem;" onclick="togglePump()" id="pump-btn">TOGGLE</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <h3 style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 1px;" data-i18n="field_vision">Field Vision</h3>
+                            <div style="border-radius: 10px; overflow: hidden; height: 130px; border: 1px solid var(--border-glass);">
+                                <img src="/video_feed" style="width: 100%; height: 100%; object-fit: cover;" alt="Live Camera Feed">
+                            </div>
+                            <div style="margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                                    <span><span data-i18n="status">STATUS</span>: <b id="viz-health" style="color: var(--accent-emerald);">--</b> <span class="confidence-text" id="viz-health-conf"></span></span>
+                                    <span class="vision-quality-badge" id="viz-crop-quality"></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                                    <span><span data-i18n="presence">PRESENCE</span>: <b id="viz-presence">--</b> <span class="confidence-text" id="viz-presence-conf"></span></span>
+                                    <span class="vision-quality-badge" id="viz-pres-quality"></span>
+                                </div>
+                            </div>
+                            <div id="vision-demo-badge" style="display: none; font-size: 0.6rem; color: var(--accent-amber); margin-top: 0.3rem;">⚡ DEMO MODE — No camera detected</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Recommendations -->
+                <div class="card span-4">
+                    <div class="card-header"><h3 data-i18n="ai_assistant">AI Assistant</h3><i class="fas fa-brain" style="color: var(--accent-purple);"></i></div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.8rem;" data-i18n="top_crops">Top 3 Recommended Crops:</p>
+                    <div class="crop-list" id="crop-ranks"></div>
+                    <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-glass); padding-top: 1rem;">
+                        <p style="font-size: 0.75rem; color: var(--text-secondary);" data-i18n="fertilizer">Fertilizer Recommendation:</p>
+                        <p style="font-weight: 600; margin-top: 0.4rem; font-size: 1rem;" id="val-fert">--</p>
+                    </div>
+                    <div style="margin-top: 1rem; border-top: 1px solid var(--border-glass); padding-top: 1rem;">
+                        <p style="font-size: 0.75rem; color: var(--text-secondary);" data-i18n="irrigation">Irrigation Status:</p>
+                        <p style="font-weight: 600; margin-top: 0.4rem;" id="val-irrigation-label">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ ANALYTICS SECTION ============ -->
+        <div class="section-page" id="section-analytics">
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header"><h3>Multi-Sensor Trend Analysis</h3><i class="fas fa-chart-line" style="color: var(--accent-blue);"></i></div>
+                <div style="height: 400px;"><canvas id="analyticsChart"></canvas></div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="card span-6">
+                    <div class="card-header"><h3>Soil Moisture History</h3></div>
+                    <div style="height: 250px;"><canvas id="moistureHistoryChart"></canvas></div>
+                </div>
+                <div class="card span-6">
+                    <div class="card-header"><h3>Temperature History</h3></div>
+                    <div style="height: 250px;"><canvas id="tempHistoryChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ NOTIFICATIONS SECTION ============ -->
+        <div class="section-page" id="section-notifications">
+            <div class="card">
+                <div class="card-header"><h3 data-i18n="notifications">System Notifications</h3><i class="fas fa-bell" style="color: var(--accent-amber);"></i></div>
+                <div class="notif-list" id="notif-list">
+                    <div class="notif-item"><i class="fas fa-check-circle" style="color: var(--accent-emerald); margin-right: 0.5rem;"></i> System initialized successfully</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ SETTINGS SECTION ============ -->
+        <div class="section-page" id="section-settings">
+            <div class="card" style="max-width: 700px;">
+                <div class="card-header"><h3 data-i18n="farm_config">Farm Configuration</h3><i class="fas fa-cog" style="color: var(--text-secondary);"></i></div>
+                <div class="settings-form">
+                    <div>
+                        <label>Farm Area (acres)</label>
+                        <input type="number" id="cfg-area" value="5.0" step="0.5">
+                    </div>
+                    <div>
+                        <label>Primary Crop</label>
+                        <select id="cfg-crop">
+                            <option>Wheat</option><option>Rice</option><option>Maize</option>
+                            <option>Cotton</option><option>Sugarcane</option><option>Millet</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Soil Type</label>
+                        <select id="cfg-soil">
+                            <option>Loamy</option><option>Sandy</option><option>Clay</option>
+                            <option>Black</option><option>Red</option><option>Alluvial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Location</label>
+                        <input type="text" id="cfg-city" value="Bangalore">
+                    </div>
+                </div>
+                <button class="btn-action btn-primary" style="margin-top: 1.5rem; width: 100%;" onclick="saveConfig()" data-i18n="save">Save Configuration</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ============================================================
+        // State
+        // ============================================================
+        let saasChart, healthChart, analyticsChart, moistHistChart, tempHistChart;
+        let currentLang = 'en';
+        let tData = {};
+        let pumpState = "OFF";
+        let modeState = "Manual";
+        let notifications = [];
+        let lastMoisture = null;
+        let userLocation = { lat: null, lon: null, city: 'Bangalore' };
+
+        // Localized digit maps
+        const digitMap = {
+            'hi': ['०','१','२','३','४','५','६','७','८','९'],
+            'mr': ['०','१','२','३','४','५','६','७','८','९'],
+            'gu': ['૦','૧','૨','૩','૪','૫','૬','૭','૮','૯'],
+            'ta': ['௦','௧','௨','௩','௪','௫','௬','௭','௮','௯'],
+            'te': ['౦','౧','౨','౩','౪','౫','౬','౭','౮','౯'],
+            'kn': ['೦','೧','೨','೩','೪','೫','೬','೭','೮','೯'],
+            'ur': ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩']
+        };
+
+        function fmt(num, lang) {
+            if (num === null || num === undefined || num === '--') return "--";
+            let s = String(num);
+            if (digitMap[lang || currentLang]) return s.replace(/[0-9]/g, d => digitMap[lang || currentLang][parseInt(d)]);
+            return s;
+        }
+
+        // ============================================================
+        // i18n
+        // ============================================================
+        async function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('krishi_lang', lang);
+            try {
+                const res = await fetch(`/api/translations/${lang}`);
+                tData = await res.json();
+                applyTranslations();
+            } catch(e) { console.error('Translation load error:', e); }
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (tData[key]) el.innerText = tData[key];
+            });
+        }
+
+        // ============================================================
+        // Theme
+        // ============================================================
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('krishi_theme', isLight ? 'light' : 'dark');
+            document.querySelector('#theme-toggle i').className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        // ============================================================
+        // Navigation
+        // ============================================================
+        function switchSection(section) {
+            document.querySelectorAll('.section-page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById('section-' + section).classList.add('active');
+            const navEl = document.getElementById('nav-' + section);
+            if (navEl) navEl.classList.add('active');
+        }
+
+        // ============================================================
+        // Charts
+        // ============================================================
+        function initCharts() {
+            const gridColor = 'rgba(255,255,255,0.05)';
+            
+            // Main dashboard chart (multi-dataset)
+            saasChart = new Chart(document.getElementById('saasChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Moisture %', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                        { label: 'Air Temp °C', data: [], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.05)', fill: false, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                        { label: 'Humidity %', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', fill: false, tension: 0.4, borderWidth: 2, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#94a3b8', font: { size: 10 } } } },
+                    scales: {
+                        y: { grid: { color: gridColor }, ticks: { color: '#64748b', font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { display: false } }
+                    }
+                }
+            });
+
+            // Health radial
+            healthChart = new Chart(document.getElementById('healthRadial').getContext('2d'), {
+                type: 'doughnut',
+                data: { datasets: [{ data: [0, 100], backgroundColor: ['#10b981', 'rgba(30,41,59,0.5)'], borderWidth: 0 }] },
+                options: { cutout: '82%', plugins: { tooltip: { enabled: false } }, animation: { duration: 600 } }
+            });
+
+            // Analytics page charts
+            analyticsChart = new Chart(document.getElementById('analyticsChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Moisture', data: [], borderColor: '#10b981', tension: 0.4, borderWidth: 2, pointRadius: 1 },
+                        { label: 'Temperature', data: [], borderColor: '#f59e0b', tension: 0.4, borderWidth: 2, pointRadius: 1 },
+                        { label: 'Humidity', data: [], borderColor: '#3b82f6', tension: 0.4, borderWidth: 2, pointRadius: 1 },
+                        { label: 'pH', data: [], borderColor: '#8b5cf6', tension: 0.4, borderWidth: 2, pointRadius: 1, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    scales: {
+                        y: { grid: { color: gridColor }, ticks: { color: '#64748b' } },
+                        y1: { position: 'right', grid: { display: false }, ticks: { color: '#8b5cf6' }, min: 4, max: 9 },
+                        x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 15 } }
+                    }
+                }
+            });
+
+            moistHistChart = new Chart(document.getElementById('moistureHistoryChart').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Moisture %', data: [], borderColor: '#10b981', fill: true, backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.4, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor } }, x: { display: false } } }
+            });
+
+            tempHistChart = new Chart(document.getElementById('tempHistoryChart').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Temp °C', data: [], borderColor: '#f59e0b', fill: true, backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.4, pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor } }, x: { display: false } } }
+            });
+        }
+
+        // ============================================================
+        // Notifications
+        // ============================================================
+        function addNotification(message, type = 'info') {
+            const ts = new Date().toLocaleTimeString();
+            notifications.unshift({ message, type, time: ts });
+            if (notifications.length > 50) notifications.pop();
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notif-list');
+            list.innerHTML = notifications.map(n => {
+                const cls = n.type === 'danger' ? 'danger' : n.type === 'warning' ? 'warning' : '';
+                const icon = n.type === 'danger' ? 'exclamation-triangle' : n.type === 'warning' ? 'exclamation-circle' : 'info-circle';
+                return `<div class="notif-item ${cls}"><i class="fas fa-${icon}" style="margin-right: 0.5rem;"></i><b>${n.time}</b> — ${n.message}</div>`;
+            }).join('');
+        }
+
+        function showToast(msg, type = 'warning', duration = 4000) {
+            const t = document.getElementById('toast-alert');
+            t.className = 'toast toast-' + type;
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, duration);
+        }
+
+        // ============================================================
+        // Data Update Loop
+        // ============================================================
+        async function updateDashboard() {
+            try {
+                // Sensor data
+                const sRes = await fetch('/api/sensors');
+                const s = await sRes.json();
+
+                document.getElementById('val-moisture').innerText = fmt(s.soil_moisture);
+                document.getElementById('val-soil-temp').innerText = fmt(s.soil_temperature);
+                document.getElementById('val-air-temp').innerText = fmt(s.air_temperature);
+                document.getElementById('val-humidity').innerText = fmt(s.humidity);
+                document.getElementById('val-salinity').innerText = fmt(s.salinity);
+                document.getElementById('val-ph').innerText = fmt(s.ph);
+                document.getElementById('val-npk').innerText = fmt(Math.round(s.nitrogen || 0)) + ':' + fmt(Math.round(s.phosphorus || 0)) + ':' + fmt(Math.round(s.potassium || 0));
+
+                // Water quality badge
+                const wBadge = document.getElementById('water-badge');
+                const wq = s.water_quality || 'Unknown';
+                wBadge.innerText = wq;
+                wBadge.className = 'water-badge water-' + wq.toLowerCase();
+
+                // Health score
+                const hs = s.health_score || 0;
+                document.getElementById('val-health-score').innerText = fmt(hs);
+                healthChart.data.datasets[0].data = [hs, 100 - hs];
+                const hColor = hs >= 70 ? '#10b981' : hs >= 40 ? '#f59e0b' : '#ef4444';
+                healthChart.data.datasets[0].backgroundColor[0] = hColor;
+                healthChart.update();
+
+                // Moisture alert
+                if (s.soil_moisture < 25 && lastMoisture >= 25) {
+                    showToast('⚠️ Soil moisture critically low: ' + s.soil_moisture + '%', 'danger');
+                    addNotification('Soil moisture dropped below critical threshold (25%)', 'danger');
+                }
+                lastMoisture = s.soil_moisture;
+
+                // Update dashboard chart
+                const now = new Date();
+                const timeLabel = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+                
+                [saasChart].forEach(chart => {
+                    chart.data.labels.push(timeLabel);
+                    chart.data.datasets[0].data.push(s.soil_moisture);
+                    chart.data.datasets[1].data.push(s.air_temperature);
+                    chart.data.datasets[2].data.push(s.humidity);
+                    if (chart.data.labels.length > 30) {
+                        chart.data.labels.shift();
+                        chart.data.datasets.forEach(ds => ds.data.shift());
+                    }
+                    chart.update('none');
+                });
+
+                // DB status (from sensor response — always works)
+                const dbEl = document.getElementById('db-status');
+                const dbDot = dbEl.querySelector('.db-dot');
+                const dbText = dbEl.querySelector('span:last-child');
+                if (s.db_connected) {
+                    dbDot.className = 'db-dot online';
+                    dbText.innerText = s.db_type === 'mongodb' ? 'MongoDB' : 'SQLite';
+                } else {
+                    dbDot.className = 'db-dot offline';
+                    dbText.innerText = 'Memory Mode';
+                }
+
+                // Recommendations (separate try-catch — login redirect won't crash other updates)
+                try {
+                    const rRes = await fetch('/api/recommendations');
+                    if (rRes.ok) {
+                        const r = await rRes.json();
+                        pumpState = r.pump_status;
+                        modeState = r.mode;
+
+                        document.getElementById('val-fert').innerText = r.fertilizer;
+                        document.getElementById('val-irrigation-label').innerText = r.irrigation_label || (r.irrigation === 'ON' ? 'Irrigation Required' : 'No Irrigation Needed');
+                        document.getElementById('val-irrigation-label').style.color = r.irrigation === 'ON' ? 'var(--accent-red)' : 'var(--accent-emerald)';
+
+                        // Mode buttons
+                        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                        const modeEl = document.getElementById('mode-' + modeState);
+                        if (modeEl) modeEl.classList.add('active');
+
+                        // Show/hide rule threshold panel
+                        const threshPanel = document.getElementById('rule-thresholds-panel');
+                        if (modeState === 'Rule') {
+                            threshPanel.classList.add('visible');
+                            // Sync slider values from server
+                            if (r.rule_thresholds) {
+                                syncThresholdSliders(r.rule_thresholds);
+                            }
+                        } else {
+                            threshPanel.classList.remove('visible');
+                        }
+
+                        // Pump visual
+                        const pViz = document.getElementById('pump-viz');
+                        const pBtn = document.getElementById('pump-btn');
+                        if (pumpState === 'ON') {
+                            pViz.classList.add('active-pump');
+                            document.getElementById('pump-label').innerText = tData['pump_run'] || 'PUMP RUNNING';
+                            pBtn.innerText = tData['btn_stop'] || 'STOP';
+                        } else {
+                            pViz.classList.remove('active-pump');
+                            document.getElementById('pump-label').innerText = tData['pump_standby'] || 'STANDBY';
+                            pBtn.innerText = tData['btn_manual'] || 'START';
+                        }
+                        document.getElementById('pump-mode-label').innerText = modeState + ' Mode';
+                        pBtn.disabled = modeState !== 'Manual';
+
+                        // Crops
+                        const cropBox = document.getElementById('crop-ranks');
+                        const crops = r.top_crops_detailed || r.top_crops?.map(c => ({name: c, confidence: 0})) || [];
+                        cropBox.innerHTML = crops.map((c, i) => {
+                            const name = typeof c === 'string' ? c : c.name;
+                            const conf = typeof c === 'string' ? '' : ` (${fmt(c.confidence)}%)`;
+                            return `<div class="crop-item">
+                                <div style="display:flex;align-items:center;gap:0.8rem;">
+                                    <div class="crop-rank">${fmt(i+1)}</div>
+                                    <span style="font-weight:600;">${name}</span>
+                                </div>
+                                <span style="font-size:0.75rem;color:var(--text-secondary);">${conf}</span>
+                            </div>`;
+                        }).join('');
+                    }
+                } catch(re) { console.warn('Recommendations fetch error:', re); }
+
+                // Vision (separate try-catch)
+                try {
+                    const vRes = await fetch('/api/vision');
+                    if (vRes.ok) {
+                        const v = await vRes.json();
+                        const cropStatus = v.crop_status || {};
+                        const presStatus = v.presence_status || {};
+
+                        // Crop/Disease status with quality awareness
+                        const vizHealth = document.getElementById('viz-health');
+                        const vizHealthConf = document.getElementById('viz-health-conf');
+                        const vizCropQuality = document.getElementById('viz-crop-quality');
+                        vizHealth.innerText = cropStatus.label || '--';
+                        
+                        // Color based on label
+                        const cLabel = cropStatus.label || '';
+                        if (cLabel === 'Healthy') {
+                            vizHealth.style.color = 'var(--accent-emerald)';
+                        } else if (cLabel === 'Diseased') {
+                            vizHealth.style.color = 'var(--accent-red)';
+                        } else if (['Camera Blocked', 'No Signal', 'Too Dark', 'No Content', 'Overexposed', 'No Frame'].includes(cLabel)) {
+                            vizHealth.style.color = 'var(--accent-amber)';
+                        } else if (cLabel === 'Uncertain') {
+                            vizHealth.style.color = 'var(--text-secondary)';
+                        } else {
+                            vizHealth.style.color = 'var(--text-primary)';
+                        }
+                        
+                        // Confidence display
+                        if (cropStatus.confidence > 0) {
+                            vizHealthConf.innerText = '(' + fmt(cropStatus.confidence) + '%)';
+                        } else {
+                            vizHealthConf.innerText = '';
+                        }
+                        
+                        // Quality badge for crop
+                        const cQuality = cropStatus.quality || '';
+                        if (cQuality === 'Good') {
+                            vizCropQuality.innerText = 'Good';
+                            vizCropQuality.className = 'vision-quality-badge vq-good';
+                        } else if (['Camera Blocked', 'Too Dark', 'No Content', 'Overexposed', 'No Frame', 'No Signal', 'Error', 'Model Error'].includes(cQuality)) {
+                            vizCropQuality.innerText = cQuality;
+                            vizCropQuality.className = 'vision-quality-badge vq-error';
+                        } else if (cQuality === 'Low Confidence') {
+                            vizCropQuality.innerText = 'Low Conf.';
+                            vizCropQuality.className = 'vision-quality-badge vq-warning';
+                        } else if (cQuality) {
+                            vizCropQuality.innerText = cQuality;
+                            vizCropQuality.className = 'vision-quality-badge vq-warning';
+                        } else {
+                            vizCropQuality.innerText = '';
+                            vizCropQuality.className = 'vision-quality-badge';
+                        }
+
+                        // Presence status
+                        const vizPresence = document.getElementById('viz-presence');
+                        const vizPresConf = document.getElementById('viz-presence-conf');
+                        const vizPresQuality = document.getElementById('viz-pres-quality');
+                        vizPresence.innerText = presStatus.label || '--';
+                        
+                        const pLabel = presStatus.label || '';
+                        if (['Camera Blocked', 'No Signal', 'Too Dark', 'No Content', 'Overexposed', 'No Frame'].includes(pLabel)) {
+                            vizPresence.style.color = 'var(--accent-amber)';
+                        } else if (pLabel === 'Human') {
+                            vizPresence.style.color = 'var(--accent-blue)';
+                        } else if (pLabel === 'Uncertain') {
+                            vizPresence.style.color = 'var(--text-secondary)';
+                        } else {
+                            vizPresence.style.color = 'var(--text-primary)';
+                        }
+                        
+                        if (presStatus.confidence > 0) {
+                            vizPresConf.innerText = '(' + fmt(presStatus.confidence) + '%)';
+                        } else {
+                            vizPresConf.innerText = '';
+                        }
+                        
+                        // Quality badge for presence
+                        const pQuality = presStatus.quality || '';
+                        if (pQuality === 'Good') {
+                            vizPresQuality.innerText = 'Good';
+                            vizPresQuality.className = 'vision-quality-badge vq-good';
+                        } else if (['Camera Blocked', 'Too Dark', 'No Content', 'Overexposed', 'No Frame', 'No Signal', 'Error', 'Model Error'].includes(pQuality)) {
+                            vizPresQuality.innerText = pQuality;
+                            vizPresQuality.className = 'vision-quality-badge vq-error';
+                        } else if (pQuality === 'Low Confidence') {
+                            vizPresQuality.innerText = 'Low Conf.';
+                            vizPresQuality.className = 'vision-quality-badge vq-warning';
+                        } else if (pQuality) {
+                            vizPresQuality.innerText = pQuality;
+                            vizPresQuality.className = 'vision-quality-badge vq-warning';
+                        } else {
+                            vizPresQuality.innerText = '';
+                            vizPresQuality.className = 'vision-quality-badge';
+                        }
+
+                        document.getElementById('vision-demo-badge').style.display = (cropStatus.demo || presStatus.demo) ? 'block' : 'none';
+                    }
+                } catch(ve) { console.warn('Vision fetch error:', ve); }
+
+                // Weather (separate try-catch)
+                try {
+                    const wRes = await fetch('/api/weather');
+                    if (wRes.ok) {
+                        const w = await wRes.json();
+                        document.getElementById('weather-temp').innerText = fmt(w.temp) + '°C';
+                        document.getElementById('weather-desc').innerText = w.condition;
+                        document.getElementById('weather-city').innerText = w.city || 'Unknown';
+                        // Update settings page city field
+                        const cfgCity = document.getElementById('cfg-city');
+                        if (cfgCity && !cfgCity.matches(':focus')) cfgCity.value = w.city || '';
+                    }
+                } catch(we) { console.warn('Weather fetch error:', we); }
+
+                // Re-apply translations for dynamic content
+                if (Object.keys(tData).length > 0) applyTranslations();
+
+            } catch (err) {
+                console.error('Dashboard update error:', err);
+            }
+        }
+
+        async function updateHistory() {
+            try {
+                const res = await fetch('/api/history');
+                const history = await res.json();
+                if (!Array.isArray(history) || history.length === 0) return;
+
+                const labels = history.map((_, i) => i);
+                const moisture = history.map(d => d.soil_moisture);
+                const temp = history.map(d => d.air_temperature);
+                const hum = history.map(d => d.humidity);
+                const ph = history.map(d => d.ph);
+
+                // Analytics page multi-chart
+                analyticsChart.data.labels = labels;
+                analyticsChart.data.datasets[0].data = moisture;
+                analyticsChart.data.datasets[1].data = temp;
+                analyticsChart.data.datasets[2].data = hum;
+                analyticsChart.data.datasets[3].data = ph;
+                analyticsChart.update('none');
+
+                // Individual history charts
+                moistHistChart.data.labels = labels;
+                moistHistChart.data.datasets[0].data = moisture;
+                moistHistChart.update('none');
+
+                tempHistChart.data.labels = labels;
+                tempHistChart.data.datasets[0].data = temp;
+                tempHistChart.update('none');
+            } catch (e) {
+                console.error('History update error:', e);
+            }
+        }
+
+        // ============================================================
+        // Controls
+        // ============================================================
+        async function setMode(m) {
+            try {
+                const res = await fetch('/api/control', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({mode: m}) });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    addNotification('Mode changed to ' + m, 'info');
+                    // Threshold panel visibility
+                    const threshPanel = document.getElementById('rule-thresholds-panel');
+                    if (m === 'Rule') {
+                        threshPanel.classList.add('visible');
+                    } else {
+                        threshPanel.classList.remove('visible');
+                    }
+                }
+            } catch(e) { console.error('Mode set error:', e); }
+            updateDashboard();
+        }
+
+        async function togglePump() {
+            if (modeState !== 'Manual') {
+                showToast('Pump control only available in Manual mode', 'warning');
+                return;
+            }
+            const next = pumpState === 'ON' ? 'OFF' : 'ON';
+            try {
+                await fetch('/api/control', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({pump: next}) });
+                addNotification('Pump manually set to ' + next, next === 'ON' ? 'warning' : 'info');
+            } catch(e) { console.error('Pump toggle error:', e); }
+            updateDashboard();
+        }
+
+        async function saveConfig() {
+            const cfg = {
+                farm_area: parseFloat(document.getElementById('cfg-area').value),
+                crop_type: document.getElementById('cfg-crop').value,
+                soil_type: document.getElementById('cfg-soil').value
+            };
+            // Also update location from settings
+            const cityVal = document.getElementById('cfg-city').value.trim();
+            if (cityVal) {
+                try {
+                    await fetch('/api/location', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({city: cityVal}) });
+                    userLocation.city = cityVal;
+                    document.getElementById('weather-city').innerText = cityVal;
+                    localStorage.setItem('krishi_city', cityVal);
+                } catch(e) { console.warn('Location update error:', e); }
+            }
+            try {
+                await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cfg) });
+                showToast('Configuration saved successfully', 'success');
+                addNotification('Farm configuration updated', 'info');
+            } catch(e) { showToast('Save failed', 'danger'); }
+        }
+
+        // ============================================================
+        // Geolocation & Location Management
+        // ============================================================
+        function detectGeolocation() {
+            const btn = document.getElementById('geo-detect-btn');
+            btn.classList.add('detecting');
+            document.getElementById('weather-city').innerText = 'Detecting...';
+            
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        userLocation.lat = lat;
+                        userLocation.lon = lon;
+                        localStorage.setItem('krishi_lat', lat);
+                        localStorage.setItem('krishi_lon', lon);
+                        
+                        // Send to server
+                        try {
+                            await fetch('/api/location', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({lat, lon})
+                            });
+                            // Fetch weather with new coords to get resolved city name
+                            const wRes = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
+                            if (wRes.ok) {
+                                const w = await wRes.json();
+                                userLocation.city = w.city;
+                                document.getElementById('weather-city').innerText = w.city;
+                                document.getElementById('weather-temp').innerText = fmt(w.temp) + '°C';
+                                document.getElementById('weather-desc').innerText = w.condition;
+                                document.getElementById('cfg-city').value = w.city;
+                                localStorage.setItem('krishi_city', w.city);
+                                showToast('📍 Location detected: ' + w.city, 'success');
+                                addNotification('Location auto-detected: ' + w.city + ' (' + lat.toFixed(4) + ', ' + lon.toFixed(4) + ')', 'info');
+                            }
+                        } catch(e) {
+                            console.error('Location update error:', e);
+                            showToast('Location detected but update failed', 'warning');
+                        }
+                        btn.classList.remove('detecting');
+                    },
+                    (error) => {
+                        btn.classList.remove('detecting');
+                        let msg = 'Location detection failed';
+                        if (error.code === 1) msg = 'Location permission denied';
+                        else if (error.code === 2) msg = 'Location unavailable';
+                        else if (error.code === 3) msg = 'Location request timed out';
+                        showToast('⚠️ ' + msg + '. Use manual input.', 'warning');
+                        document.getElementById('weather-city').innerText = userLocation.city || 'Unknown';
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+                );
+            } else {
+                btn.classList.remove('detecting');
+                showToast('Geolocation not supported in this browser', 'warning');
+                document.getElementById('weather-city').innerText = userLocation.city || 'Unknown';
+            }
+        }
+
+        function startLocationEdit() {
+            document.getElementById('location-display').style.display = 'none';
+            document.getElementById('location-edit').style.display = 'flex';
+            const input = document.getElementById('location-input');
+            input.value = userLocation.city || '';
+            input.focus();
+        }
+
+        function cancelLocationEdit() {
+            document.getElementById('location-edit').style.display = 'none';
+            document.getElementById('location-display').style.display = 'flex';
+        }
+
+        async function saveLocationManual() {
+            const city = document.getElementById('location-input').value.trim();
+            if (!city) { showToast('Please enter a city name', 'warning'); return; }
+            
+            userLocation.city = city;
+            userLocation.lat = null;
+            userLocation.lon = null;
+            localStorage.setItem('krishi_city', city);
+            localStorage.removeItem('krishi_lat');
+            localStorage.removeItem('krishi_lon');
+            
+            try {
+                await fetch('/api/location', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({city})
+                });
+                document.getElementById('weather-city').innerText = city;
+                document.getElementById('cfg-city').value = city;
+                showToast('📍 Location set to: ' + city, 'success');
+                addNotification('Location manually set to: ' + city, 'info');
+            } catch(e) {
+                showToast('Location update failed', 'danger');
+            }
+            cancelLocationEdit();
+        }
+
+        // ============================================================
+        // Rule Mode Threshold Management
+        // ============================================================
+        let thresholdDebounce = null;
+        
+        function syncThresholdSliders(thresholds) {
+            if (thresholds.moisture_low !== undefined) {
+                document.getElementById('thresh-moisture-low').value = thresholds.moisture_low;
+                document.getElementById('thresh-mlow-val').innerText = thresholds.moisture_low + '%';
+            }
+            if (thresholds.moisture_high !== undefined) {
+                document.getElementById('thresh-moisture-high').value = thresholds.moisture_high;
+                document.getElementById('thresh-mhigh-val').innerText = thresholds.moisture_high + '%';
+            }
+            if (thresholds.temp_max !== undefined) {
+                document.getElementById('thresh-temp-max').value = thresholds.temp_max;
+                document.getElementById('thresh-tmax-val').innerText = thresholds.temp_max + '°C';
+            }
+            if (thresholds.humidity_min !== undefined) {
+                document.getElementById('thresh-humidity-min').value = thresholds.humidity_min;
+                document.getElementById('thresh-hmin-val').innerText = thresholds.humidity_min + '%';
+            }
+        }
+
+        function updateThreshold(key, value) {
+            clearTimeout(thresholdDebounce);
+            thresholdDebounce = setTimeout(async () => {
+                try {
+                    const thresholds = {};
+                    thresholds[key] = parseFloat(value);
+                    await fetch('/api/control', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({rule_thresholds: thresholds})
+                    });
+                    addNotification(`Rule threshold updated: ${key} = ${value}`, 'info');
+                } catch(e) {
+                    console.error('Threshold update error:', e);
+                    showToast('Threshold update failed', 'danger');
+                }
+            }, 300);
+        }
+
+        // ============================================================
+        // Initialization
+        // ============================================================
+        initCharts();
+        
+        // Restore saved preferences
+        if (localStorage.getItem('krishi_theme') === 'light') toggleTheme();
+        const savedLang = localStorage.getItem('krishi_lang');
+        if (savedLang && savedLang !== 'en') {
+            document.getElementById('lang-selector').value = savedLang;
+            changeLanguage(savedLang);
+        }
+
+        // Restore saved location
+        const savedCity = localStorage.getItem('krishi_city');
+        const savedLat = localStorage.getItem('krishi_lat');
+        const savedLon = localStorage.getItem('krishi_lon');
+        if (savedCity) {
+            userLocation.city = savedCity;
+            document.getElementById('weather-city').innerText = savedCity;
+            document.getElementById('cfg-city').value = savedCity;
+        }
+        if (savedLat && savedLon) {
+            userLocation.lat = parseFloat(savedLat);
+            userLocation.lon = parseFloat(savedLon);
+            // Send stored coords to server on load
+            fetch('/api/location', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({lat: userLocation.lat, lon: userLocation.lon, city: userLocation.city})
+            }).catch(() => {});
+        } else if (!savedCity) {
+            // Auto-detect on first visit
+            setTimeout(() => detectGeolocation(), 1500);
+        }
+
+        // Start polling
+        updateDashboard();
+        setInterval(updateDashboard, 3000);
+        setInterval(updateHistory, 8000);
+        updateHistory();
+
+        addNotification('Dashboard initialized — sensor polling active', 'info');
+    </script>
+</body>
+</html>
