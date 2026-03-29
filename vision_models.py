@@ -11,6 +11,68 @@ import random
 
 IMG_SIZE = 224
 
+# --- Frame Quality Analysis ---
+# These thresholds can be overridden from config at runtime
+_VARIANCE_MIN = 15.0
+_BRIGHTNESS_MIN = 10
+_BRIGHTNESS_MAX = 245
+_CONFIDENCE_THRESHOLD = 0.55
+
+try:
+    from config import Config
+    _VARIANCE_MIN = Config.VISION_FRAME_VARIANCE_MIN
+    _BRIGHTNESS_MIN = Config.VISION_BRIGHTNESS_MIN
+    _BRIGHTNESS_MAX = Config.VISION_BRIGHTNESS_MAX
+    _CONFIDENCE_THRESHOLD = Config.VISION_CONFIDENCE_THRESHOLD
+except Exception:
+    pass
+
+
+def analyze_frame_quality(frame):
+    """
+    Analyze camera frame quality to detect blocked cameras, darkness, overexposure.
+    Returns: dict with 'valid' bool, 'issue' string, and quality metrics.
+    """
+    if frame is None:
+        return {"valid": False, "issue": "No Frame", "brightness": 0, "variance": 0, "edges": 0}
+
+    try:
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if len(frame.shape) == 3 else frame
+
+        # Mean brightness
+        brightness = float(np.mean(gray))
+
+        # Pixel variance — low means uniform/blocked
+        variance = float(np.std(gray))
+
+        # Edge density — no edges means no real content
+        edges = cv2.Canny(gray, 50, 150)
+        edge_density = float(np.sum(edges > 0)) / edges.size * 100  # percentage of edge pixels
+
+        # Decision logic
+        if variance < _VARIANCE_MIN:
+            if brightness < _BRIGHTNESS_MIN:
+                return {"valid": False, "issue": "Camera Blocked", "brightness": brightness, "variance": variance, "edges": edge_density}
+            elif brightness > _BRIGHTNESS_MAX:
+                return {"valid": False, "issue": "Overexposed", "brightness": brightness, "variance": variance, "edges": edge_density}
+            else:
+                return {"valid": False, "issue": "No Content", "brightness": brightness, "variance": variance, "edges": edge_density}
+
+        if brightness < _BRIGHTNESS_MIN:
+            return {"valid": False, "issue": "Too Dark", "brightness": brightness, "variance": variance, "edges": edge_density}
+
+        if brightness > _BRIGHTNESS_MAX:
+            return {"valid": False, "issue": "Overexposed", "brightness": brightness, "variance": variance, "edges": edge_density}
+
+        if edge_density < 0.5:
+            return {"valid": False, "issue": "No Content", "brightness": brightness, "variance": variance, "edges": edge_density}
+
+        return {"valid": True, "issue": None, "brightness": brightness, "variance": variance, "edges": edge_density}
+
+    except Exception as e:
+        return {"valid": False, "issue": f"Analysis Error", "brightness": 0, "variance": 0, "edges": 0}
+
+
 def build_generic_model(num_classes):
     base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(IMG_SIZE, IMG_SIZE, 3))
     x = base_model.output
@@ -50,35 +112,66 @@ class GenericVisionClassifier:
             model.save(self.model_file)
 
     def predict(self, image_path_or_array):
+        """
+        Run prediction with frame quality validation and confidence thresholding.
+        Returns dict with: label, confidence, quality (issue info), raw_label, raw_confidence
+        """
         self._ensure_model()
         
+        # Resolve image
+        if isinstance(image_path_or_array, str):
+            image = cv2.imread(image_path_or_array)
+        else:
+            image = image_path_or_array
+
+        if image is None:
+            return {"label": "No Signal", "confidence": 0.0, "quality": "No Frame"}
+
+        # --- Step 1: Frame quality check ---
+        quality = analyze_frame_quality(image)
+        if not quality["valid"]:
+            return {
+                "label": quality["issue"],
+                "confidence": 0.0,
+                "quality": quality["issue"],
+                "quality_details": quality
+            }
+
+        # --- Step 2: Model prediction ---
         try:
             if self.model is None:
-                 self.model = tf.keras.models.load_model(self.model_file)
+                self.model = tf.keras.models.load_model(self.model_file)
 
-            if isinstance(image_path_or_array, str):
-                image = cv2.imread(image_path_or_array)
-            else:
-                image = image_path_or_array
-                
-            if image is None:
-                return {"label": "Error: Image not found", "confidence": 0.0}
-                
-            image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
-            image = image.astype("float") / 255.0
-            image = img_to_array(image)
-            image = np.expand_dims(image, axis=0)
+            img = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
+            img = img.astype("float") / 255.0
+            img = img_to_array(img)
+            img = np.expand_dims(img, axis=0)
             
-            preds = self.model.predict(image, verbose=0)
+            preds = self.model.predict(img, verbose=0)
             label_idx = np.argmax(preds)
-            
             confidence = float(np.max(preds))
+            raw_label = self.labels[label_idx]
             
-            return {"label": self.labels[label_idx], "confidence": confidence}
+            # --- Step 3: Confidence thresholding ---
+            if confidence < _CONFIDENCE_THRESHOLD:
+                return {
+                    "label": "Uncertain",
+                    "confidence": confidence,
+                    "quality": "Low Confidence",
+                    "raw_label": raw_label,
+                    "raw_confidence": confidence
+                }
+            
+            return {
+                "label": raw_label,
+                "confidence": confidence,
+                "quality": "Good"
+            }
             
         except Exception as e:
             print(f"Prediction Error ({self.model_file}): {e}")
-            return {"label": random.choice(list(self.labels.values())), "confidence": 0.95}
+            return {"label": "Model Error", "confidence": 0.0, "quality": "Error"}
+
 
 # Initialize the modular classifiers based on constants from original files
 crop_classifier = GenericVisionClassifier(
@@ -106,6 +199,12 @@ if __name__ == "__main__":
     if not os.path.exists(presence_classifier_instance.model_file):
          presence_classifier_instance.train_model('dummy_train', 'dummy_val')
     
-    dummy_img = np.zeros((224, 224, 3), dtype=np.uint8)
-    print("Crop Test:", predict_crop_disease(dummy_img))
-    print("Presence Test:", predict_presence(dummy_img))
+    # Test with blocked frame (all black)
+    black_frame = np.zeros((224, 224, 3), dtype=np.uint8)
+    print("Black frame (blocked camera):", predict_crop_disease(black_frame))
+    print("Black frame presence:", predict_presence(black_frame))
+
+    # Test with real-ish frame (random noise — has variance)
+    noise_frame = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
+    print("Noise frame crop:", predict_crop_disease(noise_frame))
+    print("Noise frame presence:", predict_presence(noise_frame))
