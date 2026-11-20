@@ -7,7 +7,8 @@ import secrets
 
 class Config:
     # --- Flask ---
-    SECRET_KEY = os.environ.get('KRISHI_SECRET_KEY', secrets.token_hex(32))
+    # Use environment variable; fallback to stable dev key to prevent session dropping on reload
+    SECRET_KEY = os.environ.get('KRISHI_SECRET_KEY', 'krishi_kaar_default_secret_key_2026_dev')
     
     # --- Database ---
     MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
