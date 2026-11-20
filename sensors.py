@@ -15,14 +15,21 @@ import threading
 # --- Attempt Arduino Serial Connection ---
 _arduino = None
 _arduino_lock = threading.Lock()
-ARDUINO_PORT = os.environ.get('ARDUINO_PORT', None)
+
+try:
+    from config import Config
+    ARDUINO_PORT = Config.ARDUINO_PORT
+    ARDUINO_BAUD = Config.ARDUINO_BAUD
+except Exception:
+    ARDUINO_PORT = os.environ.get('ARDUINO_PORT', None)
+    ARDUINO_BAUD = int(os.environ.get('ARDUINO_BAUD', '9600'))
 
 if ARDUINO_PORT:
     try:
         import serial
-        _arduino = serial.Serial(ARDUINO_PORT, 9600, timeout=0.5)
+        _arduino = serial.Serial(ARDUINO_PORT, ARDUINO_BAUD, timeout=0.5)
         time.sleep(2)
-        print(f"[SENSORS] Arduino connected on {ARDUINO_PORT}")
+        print(f"[SENSORS] Arduino connected on {ARDUINO_PORT} at {ARDUINO_BAUD} baud")
     except Exception as e:
         print(f"[SENSORS] Arduino connection failed ({ARDUINO_PORT}): {e}")
         _arduino = None
@@ -116,3 +123,28 @@ def get_all_readings():
         "ph": ph.read(),
         "source": "arduino" if (hw is not None) else "simulation"
     }
+
+
+def is_arduino_connected():
+    """Return True if an active Arduino serial handle is connected."""
+    return _arduino is not None and getattr(_arduino, 'is_open', False)
+
+
+def send_pump_command(state):
+    """
+    Send pump control command ('1' for ON, '0' for OFF) to Arduino over serial.
+    Matches the command protocol implemented in arduino/led_control.ino.
+    Returns True if sent successfully, False otherwise.
+    """
+    global _arduino
+    if _arduino is None:
+        return False
+    try:
+        cmd = b'1' if str(state).strip().upper() in ('ON', '1', 'TRUE') else b'0'
+        with _arduino_lock:
+            _arduino.write(cmd)
+            _arduino.flush()
+        return True
+    except Exception as e:
+        print(f"[SENSORS] Failed to send pump command to Arduino: {e}")
+        return False
