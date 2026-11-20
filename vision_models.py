@@ -174,14 +174,25 @@ class GenericVisionClassifier:
 
 
 # Initialize the modular classifiers based on constants from original files
+base_dir = os.path.dirname(os.path.abspath(__file__))
+crop_model_path = os.path.join(base_dir, 'crop_cnn_model.h5')
+presence_model_path = os.path.join(base_dir, 'presence_cnn_model.h5')
+
+try:
+    from config import Config
+    crop_model_path = Config.CROP_CNN_FILE
+    presence_model_path = Config.PRESENCE_CNN_FILE
+except Exception:
+    pass
+
 crop_classifier = GenericVisionClassifier(
-    model_file='crop_cnn_model.h5',
+    model_file=crop_model_path,
     num_classes=3,
     labels={0: "Healthy", 1: "Diseased", 2: "No Plant"}
 )
 
 presence_classifier_instance = GenericVisionClassifier(
-    model_file='presence_cnn_model.h5',
+    model_file=presence_model_path,
     num_classes=3,
     labels={0: "Crop", 1: "Human", 2: "Imposter"}
 )
