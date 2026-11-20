@@ -68,7 +68,7 @@
 </head>
 <body>
     <div style="position: absolute; top: 1rem; right: 1rem; z-index: 10;">
-        <select id="lang-selector" onchange="changeLanguage(this.value)" style="padding: 0.5rem; background: rgba(30,41,59,0.8); color: white; border: 1px solid var(--border-glass); border-radius: 8px; outline: none;">
+        <select id="lang-selector" aria-label="Select Language" onchange="changeLanguage(this.value)" style="padding: 0.5rem; background: rgba(30,41,59,0.8); color: white; border: 1px solid var(--border-glass); border-radius: 8px; outline: none;">
             <option value="en">English</option>
             <option value="hi">हिंदी (Hindi)</option>
             <option value="mr">मराठी (Marathi)</option>
@@ -82,37 +82,37 @@
     <div class="bg-mesh"></div>
     <div class="auth-card">
         <div class="header">
-            <i class="fas fa-leaf"></i>
+            <i class="fas fa-leaf" aria-hidden="true"></i>
             <h1>Krishi_kaar</h1>
             <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;" data-i18n="saas_subtitle">SaaS Smart Agriculture</p>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('login')" data-i18n="login">LOGIN</button>
-            <button class="tab-btn" onclick="switchTab('signup')" data-i18n="signup">SIGN UP</button>
+        <div class="tabs" role="tablist">
+            <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('login')" data-i18n="login">LOGIN</button>
+            <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('signup')" data-i18n="signup">SIGN UP</button>
         </div>
 
-        <div id="error" class="error-msg" data-i18n="err_invalid">Invalid credentials. Please try again.</div>
-        <div id="success" style="color: var(--accent-emerald); font-size: 0.85rem; text-align: center; display: none; margin-bottom: 1rem;" data-i18n="succ_created">Account created! Please login.</div>
+        <div id="error" class="error-msg" role="alert" data-i18n="err_invalid">Invalid credentials. Please try again.</div>
+        <div id="success" style="color: var(--accent-emerald); font-size: 0.85rem; text-align: center; display: none; margin-bottom: 1rem;" role="status" data-i18n="succ_created">Account created! Please login.</div>
 
         <form id="auth-form" action="/login" method="POST">
             <div class="input-group">
-                <label data-i18n="lbl_email">Email Address</label>
-                <input type="email" name="email" required placeholder="farmer@krishi.com" id="in_email">
+                <label for="in_email" data-i18n="lbl_email">Email Address</label>
+                <input type="email" name="email" required placeholder="farmer@krishi.com" id="in_email" autocomplete="email">
             </div>
             <div class="input-group">
-                <label data-i18n="lbl_pass">Password</label>
-                <input type="password" name="password" required placeholder="••••••••" id="in_pass">
+                <label for="in_pass" data-i18n="lbl_pass">Password</label>
+                <input type="password" name="password" required placeholder="••••••••" id="in_pass" autocomplete="current-password">
             </div>
             
             <div id="signup-fields" style="display: none; flex-direction: column; gap: 1.2rem;">
                 <div class="input-group">
-                    <label data-i18n="lbl_name">Full Name</label>
-                    <input type="text" name="name" placeholder="John Doe" id="in_name">
+                    <label for="in_name" data-i18n="lbl_name">Full Name</label>
+                    <input type="text" name="name" placeholder="John Doe" id="in_name" autocomplete="name">
                 </div>
                 <div class="input-group">
-                    <label data-i18n="lbl_exp">Farming Experience</label>
-                    <select name="experience">
+                    <label for="in_exp" data-i18n="lbl_exp">Farming Experience</label>
+                    <select name="experience" id="in_exp">
                         <option value="Beginner" data-i18n="badge_beginner">Beginner (0-2 yrs)</option>
                         <option value="Advanced" data-i18n="badge_advanced">Advanced (2-5 yrs)</option>
                         <option value="Expert" data-i18n="badge_expert">Expert (5+ yrs)</option>
