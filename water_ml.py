@@ -9,8 +9,14 @@ import pickle
 import os
 import threading
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
-MODEL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'water_model.pkl')
+try:
+    from config import Config
+    MODEL_FILE = Config.WATER_MODEL_FILE
+except Exception:
+    MODEL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'water_model.pkl')
 
 _model = None
 _model_lock = threading.Lock()
@@ -41,8 +47,18 @@ def train_water_model():
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
     ])
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
     
     clf = DecisionTreeClassifier(max_depth=6, random_state=42)
+    clf.fit(X_train, y_train)
+
+    y_pred = clf.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    prec, rec, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted', zero_division=0)
+    print(f"[WATER_ML] Holdout Test Metrics - Accuracy: {acc:.4f}, Precision: {prec:.4f}, Recall: {rec:.4f}, F1: {f1:.4f}")
+
+    # Retrain on full dataset for serving
     clf.fit(X, y)
     
     with open(MODEL_FILE, 'wb') as f:
@@ -74,10 +90,16 @@ def _load_model():
 LABELS = {0: "Safe", 1: "Moderate", 2: "Unsafe"}
 
 def predict_water_quality(tds, temp=25.0):
-    """Predict water quality. Returns label string."""
+    """Predict water quality with input validation. Returns label string."""
     try:
+        tds_val = float(tds) if tds is not None else 350.0
+        temp_val = float(temp) if temp is not None else 25.0
+        # Realistic clamping
+        tds_val = max(0.0, min(5000.0, tds_val))
+        temp_val = max(-10.0, min(70.0, temp_val))
+        
         clf = _load_model()
-        prediction = clf.predict([[float(tds), float(temp)]])[0]
+        prediction = clf.predict([[tds_val, temp_val]])[0]
         return LABELS.get(prediction, "Unknown")
     except Exception as e:
         print(f"[WATER_ML] Prediction error: {e}")
