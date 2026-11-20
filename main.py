@@ -22,6 +22,10 @@ import sqlite3
 import numpy as np
 from datetime import datetime
 import os
+import re
+
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+_reading_counter = 0
 
 import sensors
 import water_ml
@@ -235,6 +239,7 @@ def sensor_loop():
             latest_ai_recommendations = ai_output
             
             # Automation logic
+            previous_pump = system_state["pump"]
             if system_state["mode"] == "Smart":
                 system_state["pump"] = ai_output["irrigation"]
             elif system_state["mode"] == "Rule":
@@ -257,6 +262,10 @@ def sensor_loop():
                 if hum < thresholds.get('humidity_min', 30) and moisture < thresholds.get('moisture_high', 60):
                     system_state["pump"] = "ON"
             
+            # Send hardware command if pump state changed in automated modes
+            if system_state["mode"] in ("Smart", "Rule") and system_state["pump"] != previous_pump:
+                sensors.send_pump_command(system_state["pump"])
+            
             # Enrich readings
             readings["pump_status"] = system_state["pump"]
             readings["mode"] = system_state["mode"]
@@ -275,7 +284,8 @@ def sensor_loop():
 
 
 def _persist_reading(readings):
-    """Save sensor reading to available database."""
+    """Save sensor reading to available database with throttled pruning."""
+    global _reading_counter
     try:
         if MONGO_ACTIVE:
             sensor_history.insert_one(readings.copy())
@@ -291,9 +301,12 @@ def _persist_reading(readings):
                     "INSERT INTO sensor_history (timestamp, data) VALUES (?, ?)",
                     (readings.get('timestamp', ''), data_json)
                 )
-                _sqlite_conn.execute(
-                    f"DELETE FROM sensor_history WHERE id NOT IN (SELECT id FROM sensor_history ORDER BY id DESC LIMIT {Config.MAX_SQLITE_HISTORY})"
-                )
+                _reading_counter += 1
+                # Periodically prune history instead of running full subquery every 3 seconds
+                if _reading_counter % 100 == 0:
+                    _sqlite_conn.execute(
+                        f"DELETE FROM sensor_history WHERE id NOT IN (SELECT id FROM sensor_history ORDER BY id DESC LIMIT {Config.MAX_SQLITE_HISTORY})"
+                    )
                 _sqlite_conn.commit()
         else:
             mock_history.append(readings.copy())
@@ -430,7 +443,7 @@ def auth_page():
 
 @app.route('/login', methods=['POST'])
 def login():
-    email = request.form.get('email', '').strip()
+    email = request.form.get('email', '').strip().lower()
     password = request.form.get('password', '')
     
     if not email or not password:
@@ -457,16 +470,21 @@ def login():
 
 @app.route('/signup', methods=['POST'])
 def signup():
-    email = request.form.get('email', '').strip()
+    email = request.form.get('email', '').strip().lower()
     password = request.form.get('password', '')
-    name = request.form.get('name', 'Farmer').strip()
+    name = request.form.get('name', 'Farmer').strip()[:60]
     experience = request.form.get('experience', 'Beginner')
+    if experience not in ('Beginner', 'Advanced', 'Expert'):
+        experience = 'Beginner'
     
     if not email or not password:
         return redirect(url_for('auth_page', error="Please fill all fields"))
     
-    if len(password) < 4:
-        return redirect(url_for('auth_page', error="Password must be at least 4 characters"))
+    if not EMAIL_REGEX.match(email):
+        return redirect(url_for('auth_page', error="Invalid email address format"))
+    
+    if len(password) < 6:
+        return redirect(url_for('auth_page', error="Password must be at least 6 characters"))
     
     # Check existence
     existing = None
@@ -520,6 +538,7 @@ def index():
 
 
 @app.route('/video_feed')
+@login_required
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
@@ -528,7 +547,20 @@ def video_feed():
 # API Endpoints
 # ============================================================
 @app.route('/api/sensors')
+@login_required
 def api_sensors():
+    global latest_sensor_data
+    if latest_sensor_data.get('source') == 'initializing':
+        # Provide immediate reading if background thread has not completed first tick
+        live = sensors.get_all_readings()
+        live['water_quality'] = water_ml.predict_water_quality(live['tds'], live['air_temperature'])
+        live['pump_status'] = system_state["pump"]
+        live['mode'] = system_state["mode"]
+        ai_out = agri_ai.get_recommendations(live)
+        live['health_score'] = ai_out.get('health_score', 50)
+        live['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        latest_sensor_data = live
+
     data = latest_sensor_data.copy()
     data['db_type'] = db_type()
     data['db_connected'] = MONGO_ACTIVE or SQLITE_ACTIVE
@@ -538,6 +570,11 @@ def api_sensors():
 @app.route('/api/recommendations')
 @login_required
 def api_recommendations():
+    global latest_ai_recommendations
+    if latest_ai_recommendations.get('crop') == 'Initializing...':
+        s_data = latest_sensor_data if latest_sensor_data.get('source') != 'initializing' else sensors.get_all_readings()
+        latest_ai_recommendations = agri_ai.get_recommendations(s_data)
+
     data = latest_ai_recommendations.copy()
     data.update({
         "pump_status": system_state["pump"],
@@ -551,6 +588,7 @@ def api_recommendations():
 
 
 @app.route('/api/vision')
+@login_required
 def api_vision():
     crop = latest_crop_status.copy()
     presence = latest_presence_status.copy()
@@ -564,6 +602,7 @@ def api_vision():
 
 
 @app.route('/api/weather')
+@login_required
 def api_weather():
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
@@ -572,20 +611,28 @@ def api_weather():
 
 
 @app.route('/api/location', methods=['POST'])
+@login_required
 def api_location():
     """Update server-side location from browser geolocation or manual input."""
     global location_state
     req = request.json or {}
     
     if 'lat' in req and 'lon' in req:
-        location_state['lat'] = float(req['lat'])
-        location_state['lon'] = float(req['lon'])
-        # Invalidate weather cache to force re-fetch with new coords
-        _weather_cache['expires'] = 0
+        try:
+            lat = float(req['lat'])
+            lon = float(req['lon'])
+            if -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0:
+                location_state['lat'] = lat
+                location_state['lon'] = lon
+                _weather_cache['expires'] = 0
+        except (ValueError, TypeError):
+            pass
     
-    if 'city' in req:
-        location_state['city'] = req['city']
-        _weather_cache['expires'] = 0
+    if 'city' in req and isinstance(req['city'], str):
+        cleaned_city = req['city'].strip()[:60]
+        if cleaned_city:
+            location_state['city'] = cleaned_city
+            _weather_cache['expires'] = 0
     
     return jsonify({"status": "success", "location": location_state})
 
@@ -607,19 +654,30 @@ def api_control():
     if "pump" in req and req["pump"] in ("ON", "OFF"):
         if system_state["mode"] == "Manual":
             system_state["pump"] = req["pump"]
+            sensors.send_pump_command(system_state["pump"])
         else:
             return jsonify({"status": "error", "message": "Pump control only available in Manual mode"}), 400
     
-    # Rule mode threshold updates
+    # Rule mode threshold updates with bounds validation
     if "rule_thresholds" in req and isinstance(req["rule_thresholds"], dict):
-        valid_keys = {"moisture_low", "moisture_high", "temp_max", "humidity_min"}
+        bounds = {
+            "moisture_low": (0.0, 100.0),
+            "moisture_high": (0.0, 100.0),
+            "temp_max": (0.0, 60.0),
+            "humidity_min": (0.0, 100.0)
+        }
         thresholds = system_state.get("rule_thresholds", dict(Config.DEFAULT_RULE_THRESHOLDS))
         for k, v in req["rule_thresholds"].items():
-            if k in valid_keys:
+            if k in bounds:
                 try:
-                    thresholds[k] = float(v)
+                    f_val = float(v)
+                    min_b, max_b = bounds[k]
+                    thresholds[k] = max(min_b, min(max_b, f_val))
                 except (ValueError, TypeError):
                     pass
+        # Ensure moisture_low <= moisture_high
+        if thresholds.get("moisture_low", 30) > thresholds.get("moisture_high", 60):
+            thresholds["moisture_high"] = thresholds["moisture_low"]
         system_state["rule_thresholds"] = thresholds
     
     return jsonify({"status": "success", "state": system_state})
@@ -631,9 +689,17 @@ def api_config():
     global system_state
     req = request.json or {}
     
-    allowed_keys = {"farm_area", "crop_type", "soil_type"}
-    updates = {k: v for k, v in req.items() if k in allowed_keys}
-    system_state.update(updates)
+    if "farm_area" in req:
+        try:
+            area = float(req["farm_area"])
+            if 0.1 <= area <= 100000.0:
+                system_state["farm_area"] = area
+        except (ValueError, TypeError):
+            pass
+    if "crop_type" in req and isinstance(req["crop_type"], str):
+        system_state["crop_type"] = req["crop_type"][:40].strip()
+    if "soil_type" in req and isinstance(req["soil_type"], str):
+        system_state["soil_type"] = req["soil_type"][:40].strip()
     
     if MONGO_ACTIVE:
         try:
@@ -655,6 +721,7 @@ def api_config():
 
 
 @app.route('/api/history')
+@login_required
 def api_history():
     try:
         if MONGO_ACTIVE:
