@@ -328,12 +328,12 @@
                             <button onclick="saveLocationManual()">Set</button>
                             <button onclick="cancelLocationEdit()" style="background: var(--accent-red);">✕</button>
                         </div>
-                        <button class="geo-btn" id="geo-detect-btn" onclick="detectGeolocation()" title="Auto-detect location">
-                            <i class="fas fa-crosshairs"></i>
+                        <button class="geo-btn" id="geo-detect-btn" aria-label="Auto-detect geolocation" onclick="detectGeolocation()" title="Auto-detect location">
+                            <i class="fas fa-crosshairs" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
-                <select id="lang-selector" onchange="changeLanguage(this.value)">
+                <select id="lang-selector" aria-label="Select Interface Language" onchange="changeLanguage(this.value)">
                     <option value="en">English</option>
                     <option value="hi">हिंदी</option>
                     <option value="mr">मराठी</option>
@@ -343,8 +343,8 @@
                     <option value="kn">ಕನ್ನಡ</option>
                     <option value="ur">اردو</option>
                 </select>
-                <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()">
-                    <i class="fas fa-moon"></i>
+                <button class="theme-btn" id="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">
+                    <i class="fas fa-moon" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -416,28 +416,28 @@
                                 <span><i class="fas fa-tint" style="color: var(--accent-emerald); margin-right: 0.3rem;"></i>Moisture ON (Low)</span>
                                 <span class="threshold-val" id="thresh-mlow-val">30%</span>
                             </div>
-                            <input type="range" class="threshold-slider" id="thresh-moisture-low" min="5" max="60" value="30" onchange="updateThreshold('moisture_low', this.value)" oninput="document.getElementById('thresh-mlow-val').innerText = this.value + '%'">
+                            <input type="range" class="threshold-slider" id="thresh-moisture-low" aria-label="Soil Moisture Low Trigger" min="5" max="60" value="30" onchange="updateThreshold('moisture_low', this.value)" oninput="document.getElementById('thresh-mlow-val').innerText = this.value + '%'">
                         </div>
                         <div class="threshold-item">
                             <div class="threshold-label">
                                 <span><i class="fas fa-tint-slash" style="color: var(--accent-blue); margin-right: 0.3rem;"></i>Moisture OFF (High)</span>
                                 <span class="threshold-val" id="thresh-mhigh-val">60%</span>
                             </div>
-                            <input type="range" class="threshold-slider" id="thresh-moisture-high" min="40" max="95" value="60" onchange="updateThreshold('moisture_high', this.value)" oninput="document.getElementById('thresh-mhigh-val').innerText = this.value + '%'">
+                            <input type="range" class="threshold-slider" id="thresh-moisture-high" aria-label="Soil Moisture High Cutoff" min="40" max="95" value="60" onchange="updateThreshold('moisture_high', this.value)" oninput="document.getElementById('thresh-mhigh-val').innerText = this.value + '%'">
                         </div>
                         <div class="threshold-item">
                             <div class="threshold-label">
                                 <span><i class="fas fa-temperature-high" style="color: var(--accent-red); margin-right: 0.3rem;"></i>Max Temp Alert</span>
                                 <span class="threshold-val" id="thresh-tmax-val">40°C</span>
                             </div>
-                            <input type="range" class="threshold-slider" id="thresh-temp-max" min="25" max="55" value="40" onchange="updateThreshold('temp_max', this.value)" oninput="document.getElementById('thresh-tmax-val').innerText = this.value + '°C'">
+                            <input type="range" class="threshold-slider" id="thresh-temp-max" aria-label="Maximum Temperature Trigger" min="25" max="55" value="40" onchange="updateThreshold('temp_max', this.value)" oninput="document.getElementById('thresh-tmax-val').innerText = this.value + '°C'">
                         </div>
                         <div class="threshold-item">
                             <div class="threshold-label">
                                 <span><i class="fas fa-cloud-rain" style="color: var(--accent-purple); margin-right: 0.3rem;"></i>Min Humidity Alert</span>
                                 <span class="threshold-val" id="thresh-hmin-val">30%</span>
                             </div>
-                            <input type="range" class="threshold-slider" id="thresh-humidity-min" min="10" max="70" value="30" onchange="updateThreshold('humidity_min', this.value)" oninput="document.getElementById('thresh-hmin-val').innerText = this.value + '%'">
+                            <input type="range" class="threshold-slider" id="thresh-humidity-min" aria-label="Minimum Humidity Trigger" min="10" max="70" value="30" onchange="updateThreshold('humidity_min', this.value)" oninput="document.getElementById('thresh-hmin-val').innerText = this.value + '%'">
                         </div>
                         <div class="threshold-active-rules" id="threshold-active-rules">
                             <i class="fas fa-info-circle" style="margin-right: 0.3rem;"></i> Pump activates when moisture drops below ON threshold or temp/humidity triggers fire.
@@ -530,25 +530,25 @@
                 <div class="card-header"><h3 data-i18n="farm_config">Farm Configuration</h3><i class="fas fa-cog" style="color: var(--text-secondary);"></i></div>
                 <div class="settings-form">
                     <div>
-                        <label>Farm Area (acres)</label>
+                        <label for="cfg-area">Farm Area (acres)</label>
                         <input type="number" id="cfg-area" value="5.0" step="0.5">
                     </div>
                     <div>
-                        <label>Primary Crop</label>
+                        <label for="cfg-crop">Primary Crop</label>
                         <select id="cfg-crop">
                             <option>Wheat</option><option>Rice</option><option>Maize</option>
                             <option>Cotton</option><option>Sugarcane</option><option>Millet</option>
                         </select>
                     </div>
                     <div>
-                        <label>Soil Type</label>
+                        <label for="cfg-soil">Soil Type</label>
                         <select id="cfg-soil">
                             <option>Loamy</option><option>Sandy</option><option>Clay</option>
                             <option>Black</option><option>Red</option><option>Alluvial</option>
                         </select>
                     </div>
                     <div>
-                        <label>Location</label>
+                        <label for="cfg-city">Location</label>
                         <input type="text" id="cfg-city" value="Bangalore">
                     </div>
                 </div>
